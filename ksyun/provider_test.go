@@ -5,7 +5,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	"github.com/ksyun/terraform-provider-ks3/ksyun/connectivity"
+	"github.com/wilac-pv/terraform-provider-ks3/ksyun/connectivity"
 	"log"
 	"os"
 	"testing"

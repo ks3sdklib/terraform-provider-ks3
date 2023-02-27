@@ -19,213 +19,16 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 )
 
-type InstanceNetWork string
-
-const (
-	ClassicNet = InstanceNetWork("classic")
-	VpcNet     = InstanceNetWork("vpc")
-)
-
-type PayType string
-
-const (
-	PrePaid  = PayType("PrePaid")
-	PostPaid = PayType("PostPaid")
-	Prepaid  = PayType("Prepaid")
-	Postpaid = PayType("Postpaid")
-)
-
-const (
-	NormalMode = "normal"
-	SafetyMode = "safety"
-)
-
-type DdosbgpInsatnceType string
-
-const (
-	Enterprise   = DdosbgpInsatnceType("Enterprise")
-	Professional = DdosbgpInsatnceType("Professional")
-)
-
-type DdosbgpInstanceIpType string
-
-const (
-	IPv4 = DdosbgpInstanceIpType("IPv4")
-	IPv6 = DdosbgpInstanceIpType("IPv6")
-)
-
-type NetType string
-
-const (
-	Internet = NetType("Internet")
-	Intranet = NetType("Intranet")
-)
-
-type NetworkType string
-
-const (
-	Classic         = NetworkType("Classic")
-	Vpc             = NetworkType("Vpc")
-	ClassicInternet = NetworkType("classic_internet")
-	ClassicIntranet = NetworkType("classic_intranet")
-	PUBLIC          = NetworkType("PUBLIC")
-	PRIVATE         = NetworkType("PRIVATE")
-)
-
-type NodeType string
-
-const (
-	WORKER = NodeType("WORKER")
-	KIBANA = NodeType("KIBANA")
-)
-
-type ActionType string
-
-const (
-	OPEN  = ActionType("OPEN")
-	CLOSE = ActionType("CLOSE")
-)
-
-type TimeType string
-
-const (
-	Hour  = TimeType("Hour")
-	Day   = TimeType("Day")
-	Week  = TimeType("Week")
-	Month = TimeType("Month")
-	Year  = TimeType("Year")
-)
-
-type IpVersion string
-
-const (
-	IPV4 = IpVersion("ipv4")
-	IPV6 = IpVersion("ipv6")
-)
-
 type Status string
 
 const (
-	Pending     = Status("Pending")
-	Creating    = Status("Creating")
-	Running     = Status("Running")
-	Available   = Status("Available")
-	Unavailable = Status("Unavailable")
-	Modifying   = Status("Modifying")
-	Deleting    = Status("Deleting")
-	Starting    = Status("Starting")
-	Stopping    = Status("Stopping")
-	Stopped     = Status("Stopped")
-	Normal      = Status("Normal")
-	Changing    = Status("Changing")
-	Online      = Status("online")
-	Configuring = Status("configuring")
-
-	Associating   = Status("Associating")
-	Unassociating = Status("Unassociating")
-	InUse         = Status("InUse")
-	DiskInUse     = Status("In_use")
-
-	Active   = Status("Active")
-	Inactive = Status("Inactive")
-	Idle     = Status("Idle")
-
-	SoldOut = Status("SoldOut")
-
-	InService      = Status("InService")
-	Removing       = Status("Removing")
-	DisabledStatus = Status("Disabled")
-
-	Init            = Status("Init")
-	Provisioning    = Status("Provisioning")
-	Updating        = Status("Updating")
-	FinancialLocked = Status("FinancialLocked")
-
-	PUBLISHED   = Status("Published")
-	NOPUBLISHED = Status("NonPublished")
-
 	Deleted = Status("Deleted")
-	Null    = Status("Null")
-
-	Enable = Status("Enable")
-	BINDED = Status("BINDED")
-)
-
-type IPType string
-
-const (
-	Inner   = IPType("Inner")
-	Private = IPType("Private")
-	Public  = IPType("Public")
-)
-
-type ResourceType string
-
-const (
-	ResourceTypeInstance      = ResourceType("Instance")
-	ResourceTypeDisk          = ResourceType("Disk")
-	ResourceTypeVSwitch       = ResourceType("VSwitch")
-	ResourceTypeRds           = ResourceType("Rds")
-	ResourceTypePolarDB       = ResourceType("PolarDB")
-	IoOptimized               = ResourceType("IoOptimized")
-	ResourceTypeRkv           = ResourceType("KVStore")
-	ResourceTypeFC            = ResourceType("FunctionCompute")
-	ResourceTypeElasticsearch = ResourceType("Elasticsearch")
-	ResourceTypeSlb           = ResourceType("Slb")
-	ResourceTypeMongoDB       = ResourceType("MongoDB")
-	ResourceTypeGpdb          = ResourceType("Gpdb")
-	ResourceTypeHBase         = ResourceType("HBase")
-	ResourceTypeAdb           = ResourceType("ADB")
-	ResourceTypeCassandra     = ResourceType("Cassandra")
-)
-
-type InternetChargeType string
-
-const (
-	PayByBandwidth = InternetChargeType("PayByBandwidth")
-	PayByTraffic   = InternetChargeType("PayByTraffic")
-	PayBy95        = InternetChargeType("PayBy95")
-)
-
-type AccountSite string
-
-const (
-	DomesticSite = AccountSite("Domestic")
-	IntlSite     = AccountSite("International")
-)
-const (
-	SnapshotCreatingInProcessing = Status("progressing")
-	SnapshotCreatingAccomplished = Status("accomplished")
-	SnapshotCreatingFailed       = Status("failed")
-
-	SnapshotPolicyCreating  = Status("Creating")
-	SnapshotPolicyAvailable = Status("available")
-	SnapshotPolicyNormal    = Status("Normal")
 )
 
 // timeout for common product, ecs e.g.
 const DefaultTimeout = 120
 const Timeout5Minute = 300
 const DefaultTimeoutMedium = 500
-
-// timeout for long time progerss product, rds e.g.
-const DefaultLongTimeout = 1000
-
-const DefaultIntervalMini = 2
-
-const DefaultIntervalShort = 5
-
-const DefaultIntervalMedium = 10
-
-const DefaultIntervalLong = 20
-
-const (
-	PageNumSmall   = 1
-	PageSizeSmall  = 10
-	PageSizeMedium = 20
-	PageSizeLarge  = 50
-	PageSizeXLarge = 100
-)
 
 // Protocol represents network protocol
 type Protocol string
@@ -241,25 +44,10 @@ const (
 	Gre   = Protocol("gre")
 )
 
-const (
-	// HeaderEnableEBTrigger header key for enabling eventbridge trigger
-	// TODO: delete the header after eventbridge trigger is totally exposed to user
-	HeaderEnableEBTrigger = "x-fc-enable-eventbridge-trigger"
-)
-
 // ValidProtocols network protocol list
 var ValidProtocols = []Protocol{Http, Https, Tcp, Udp}
 
 // simple array value check method, support string type only
-func isProtocolValid(value string) bool {
-	res := false
-	for _, v := range ValidProtocols {
-		if string(v) == value {
-			res = true
-		}
-	}
-	return res
-}
 
 // default region for all resource
 const DEFAULT_REGION = "cn-beijing"

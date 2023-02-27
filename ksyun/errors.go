@@ -5,18 +5,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/alibabacloud-go/tea/tea"
-
-	sls "github.com/aliyun/aliyun-log-go-sdk"
-
 	"fmt"
-
 	"log"
 	"runtime"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/errors"
-	"github.com/aliyun/aliyun-datahub-sdk-go/datahub"
-	"github.com/denverdino/aliyungo/common"
 )
 
 const (
@@ -72,20 +65,12 @@ func NotFoundError(err error) bool {
 		return false
 	}
 
-	if e, ok := err.(*tea.SDKError); ok {
-		return tea.IntValue(e.StatusCode) == 404 || regexp.MustCompile(NotFound).MatchString(tea.StringValue(e.Message))
-	}
-
 	if e, ok := err.(*errors.ServerError); ok {
 		return e.ErrorCode() == InstanceNotFound || e.ErrorCode() == RamInstanceNotFound || e.ErrorCode() == NotFound || e.HttpStatus() == 404 || strings.Contains(strings.ToLower(e.Message()), MessageInstanceNotFound)
 	}
 
 	if e, ok := err.(*ProviderError); ok {
 		return e.ErrorCode() == InstanceNotFound || e.ErrorCode() == RamInstanceNotFound || e.ErrorCode() == NotFound || strings.Contains(strings.ToLower(e.Message()), MessageInstanceNotFound)
-	}
-
-	if e, ok := err.(*common.Error); ok {
-		return e.Code == InstanceNotFound || e.Code == RamInstanceNotFound || e.Code == NotFound || strings.Contains(strings.ToLower(e.Message), MessageInstanceNotFound)
 	}
 
 	if e, ok := err.(ks3.ServiceError); ok {
@@ -104,16 +89,6 @@ func IsExpectedErrors(err error, expectCodes []string) bool {
 		return IsExpectedErrors(e.Cause, expectCodes)
 	}
 
-	if e, ok := err.(*tea.SDKError); ok {
-		for _, code := range expectCodes {
-			// The second statement aims to match the tea sdk history bug
-			if *e.Code == code || strings.HasPrefix(code, *e.Code) || strings.Contains(*e.Data, code) {
-				return true
-			}
-		}
-		return false
-	}
-
 	if e, ok := err.(*errors.ServerError); ok {
 		for _, code := range expectCodes {
 			if e.ErrorCode() == code || strings.Contains(e.Message(), code) {
@@ -132,34 +107,7 @@ func IsExpectedErrors(err error, expectCodes []string) bool {
 		return false
 	}
 
-	if e, ok := err.(*common.Error); ok {
-		for _, code := range expectCodes {
-			if e.Code == code || strings.Contains(e.Message, code) {
-				return true
-			}
-		}
-		return false
-	}
-
-	if e, ok := err.(*sls.Error); ok {
-		for _, code := range expectCodes {
-			if e.Code == code || strings.Contains(e.Message, code) || strings.Contains(e.String(), code) {
-				return true
-			}
-		}
-		return false
-	}
-
 	if e, ok := err.(ks3.ServiceError); ok {
-		for _, code := range expectCodes {
-			if e.Code == code || strings.Contains(e.Message, code) {
-				return true
-			}
-		}
-		return false
-	}
-
-	if e, ok := err.(*datahub.DatahubClientError); ok {
 		for _, code := range expectCodes {
 			if e.Code == code || strings.Contains(e.Message, code) {
 				return true
@@ -189,62 +137,18 @@ func NeedRetry(err error) bool {
 	throttlingRegex := regexp.MustCompile("Throttling")
 	codeRegex := regexp.MustCompile("^code: 5[\\d]{2}")
 
-	if e, ok := err.(*tea.SDKError); ok {
-		if strings.Contains(*e.Message, "code: 500, 您已开通过") {
-			return false
-		}
-		if strings.Contains(*e.Message, "Client.Timeout") {
-			return true
-		}
-		if *e.Code == ServiceUnavailable || *e.Code == "Rejected.Throttling" || throttlingRegex.MatchString(*e.Code) || codeRegex.MatchString(*e.Message) {
-			return true
-		}
-	}
-
 	if e, ok := err.(*errors.ServerError); ok {
 		return e.ErrorCode() == ServiceUnavailable || e.ErrorCode() == "Rejected.Throttling" || throttlingRegex.MatchString(e.ErrorCode()) || codeRegex.MatchString(e.Message())
 	}
 
-	if e, ok := err.(*common.Error); ok {
-		return e.Code == ServiceUnavailable || e.Code == "Rejected.Throttling" || throttlingRegex.MatchString(e.Code) || codeRegex.MatchString(e.Message)
-	}
-
 	return false
-}
-
-func IsExpectedErrorCodes(code string, errorCodes []string) bool {
-	if code == "" {
-		return false
-	}
-	for _, v := range errorCodes {
-		if v == code {
-			return true
-		}
-	}
-	return false
-}
-
-func GetTimeErrorFromString(str string) error {
-	return &ProviderError{
-		errorCode: "WaitForTimeout",
-		message:   str,
-	}
-}
-
-func GetNotFoundMessage(product, id string) string {
-	return fmt.Sprintf("The specified %s %s is not found.", product, id)
-}
-
-func GetTimeoutMessage(product, status string) string {
-	return fmt.Sprintf("Waitting for %s %s is timeout.", product, status)
 }
 
 type ErrorSource string
 
 const (
-	AlibabaCloudSdkGoERROR = ErrorSource("[SDK alibaba-cloud-sdk-go ERROR]")
-	KsyunKs3GoSdk          = ErrorSource("[SDK ksyun-ks3-go-sdk ERROR]")
-	ProviderERROR          = ErrorSource("[Provider ERROR]")
+	KsyunKs3GoSdk = ErrorSource("[SDK ksyun-ks3-go-sdk ERROR]")
+	ProviderERROR = ErrorSource("[Provider ERROR]")
 )
 
 // ComplexError is a format error which including origin error, extra error message, error occurred file and line

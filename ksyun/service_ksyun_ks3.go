@@ -1,8 +1,8 @@
 package ksyun
 
 import (
-	"github.com/ksyun/terraform-provider-ks3/ksyun/connectivity"
 	"github.com/wilac-pv/ksyun-ks3-go-sdk/ks3"
+	"github.com/wilac-pv/terraform-provider-ks3/ksyun/connectivity"
 	"strconv"
 	"time"
 )

@@ -5,82 +5,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"regexp"
 	"strings"
 	"time"
-
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-
-	"github.com/aliyun/alibaba-cloud-sdk-go/services/location"
 )
 
 // ServiceCode Load endpoints from endpoints.xml or environment variables to meet specified application scenario, like private cloud.
 type ServiceCode string
 
 const (
-	MaxcomputeCode      = ServiceCode("MAXCOMPUTE")
-	CmsCode             = ServiceCode("CMS")
-	RKvstoreCode        = ServiceCode("RKVSTORE")
-	OnsCode             = ServiceCode("ONS")
-	DcdnCode            = ServiceCode("DCDN")
-	MseCode             = ServiceCode("MSE")
-	ActiontrailCode     = ServiceCode("ACTIONTRAIL")
-	OosCode             = ServiceCode("OOS")
-	EcsCode             = ServiceCode("ECS")
-	NasCode             = ServiceCode("NAS")
-	EciCode             = ServiceCode("ECI")
-	DdoscooCode         = ServiceCode("DDOSCOO")
-	BssopenapiCode      = ServiceCode("BSSOPENAPI")
-	AlidnsCode          = ServiceCode("ALIDNS")
-	ResourcemanagerCode = ServiceCode("RESOURCEMANAGER")
-	WafOpenapiCode      = ServiceCode("WAFOPENAPI")
-	DmsEnterpriseCode   = ServiceCode("DMSENTERPRISE")
-	DnsCode             = ServiceCode("DNS")
-	KmsCode             = ServiceCode("KMS")
-	CbnCode             = ServiceCode("CBN")
-	ECSCode             = ServiceCode("ECS")
-	ESSCode             = ServiceCode("ESS")
-	RAMCode             = ServiceCode("RAM")
-	VPCCode             = ServiceCode("VPC")
-	SLBCode             = ServiceCode("SLB")
-	RDSCode             = ServiceCode("RDS")
-	OSSCode             = ServiceCode("OSS")
-	ONSCode             = ServiceCode("ONS")
-	ALIKAFKACode        = ServiceCode("ALIKAFKA")
-	CONTAINCode         = ServiceCode("CS")
-	CRCode              = ServiceCode("CR")
-	CDNCode             = ServiceCode("CDN")
-	CMSCode             = ServiceCode("CMS")
-	KMSCode             = ServiceCode("KMS")
-	OTSCode             = ServiceCode("OTS")
-	DNSCode             = ServiceCode("DNS")
-	PVTZCode            = ServiceCode("PVTZ")
-	LOGCode             = ServiceCode("LOG")
-	FCCode              = ServiceCode("FC")
-	DDSCode             = ServiceCode("DDS")
-	GPDBCode            = ServiceCode("GPDB")
-	STSCode             = ServiceCode("STS")
-	KVSTORECode         = ServiceCode("KVSTORE")
-	POLARDBCode         = ServiceCode("POLARDB")
-	DATAHUBCode         = ServiceCode("DATAHUB")
-	MNSCode             = ServiceCode("MNS")
-	CLOUDAPICode        = ServiceCode("APIGATEWAY")
-	DRDSCode            = ServiceCode("DRDS")
-	LOCATIONCode        = ServiceCode("LOCATION")
-	ELASTICSEARCHCode   = ServiceCode("ELASTICSEARCH")
-	BSSOPENAPICode      = ServiceCode("BSSOPENAPI")
-	DDOSCOOCode         = ServiceCode("DDOSCOO")
-	DDOSBGPCode         = ServiceCode("DDOSBGP")
-	SAGCode             = ServiceCode("SAG")
-	EMRCode             = ServiceCode("EMR")
-	CasCode             = ServiceCode("CAS")
-	YUNDUNDBAUDITCode   = ServiceCode("YUNDUNDBAUDIT")
-	MARKETCode          = ServiceCode("MARKET")
-	HBASECode           = ServiceCode("HBASE")
-	ADBCode             = ServiceCode("ADB")
-	MAXCOMPUTECode      = ServiceCode("MAXCOMPUTE")
-	EDASCode            = ServiceCode("EDAS")
-	CassandraCode       = ServiceCode("CASSANDRA")
+	OSSCode = ServiceCode("OSS")
 )
 
 type Endpoints struct {
@@ -225,55 +158,49 @@ func incrementalWait(firstDuration time.Duration, increaseDuration time.Duration
 	}
 }
 func (client *KsyunClient) describeEndpointForService(serviceCode string) (string, error) {
-	args := location.CreateDescribeEndpointsRequest()
-	args.ServiceCode = serviceCode
-	args.Id = client.config.RegionId
-	args.Domain = client.config.LocationEndpoint
-	if args.Domain == "" {
-		args.Domain = loadEndpoint(client.RegionId, LOCATIONCode)
-	}
-	if args.Domain == "" {
-		args.Domain = "location-readonly.aliyuncs.com"
-	}
+	//args := location.CreateDescribeEndpointsRequest()
+	//args.ServiceCode = serviceCode
+	//args.Id = client.config.RegionId
+	//args.Domain = "ks3-cn-beijing.ksyuncs.com"
 
-	locationClient, err := location.NewClientWithOptions(client.config.RegionId, client.getSdkConfig(), client.config.getAuthCredential(true))
-	if err != nil {
-		return "", fmt.Errorf("Unable to initialize the location client: %#v", err)
-
-	}
-	defer locationClient.Shutdown()
-	locationClient.AppendUserAgent(Terraform, terraformVersion)
-	locationClient.AppendUserAgent(Provider, providerVersion)
-	locationClient.AppendUserAgent(Module, client.config.ConfigurationSource)
-	wait := incrementalWait(3*time.Second, 5*time.Second)
-	var endpointResult string
-	err = resource.Retry(5*time.Minute, func() *resource.RetryError {
-		endpointsResponse, err := locationClient.DescribeEndpoints(args)
-		if err != nil {
-			re := regexp.MustCompile("^Post [\"]*https://.*")
-			if err.Error() != "" && re.MatchString(err.Error()) {
-				wait()
-				return resource.RetryableError(err)
-			}
-			return resource.NonRetryableError(err)
-		}
-		if endpointsResponse != nil && len(endpointsResponse.Endpoints.Endpoint) > 0 {
-			for _, e := range endpointsResponse.Endpoints.Endpoint {
-				if e.Type == "openAPI" {
-					endpointResult = e.Endpoint
-					return nil
-				}
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return "", fmt.Errorf("Describe %s endpoint using region: %#v got an error: %#v.", serviceCode, client.RegionId, err)
-	}
-	if endpointResult == "" {
-		return "", fmt.Errorf("There is no any available endpoint for %s in region %s.", serviceCode, client.RegionId)
-	}
-	return endpointResult, nil
+	//locationClient, err := location.NewClientWithOptions(client.config.RegionId, client.getSdkConfig(), client.config.getAuthCredential(true))
+	//if err != nil {
+	//	return "", fmt.Errorf("Unable to initialize the location client: %#v", err)
+	//
+	//}
+	//defer locationClient.Shutdown()
+	//locationClient.AppendUserAgent(Terraform, terraformVersion)
+	//locationClient.AppendUserAgent(Provider, providerVersion)
+	//locationClient.AppendUserAgent(Module, client.config.ConfigurationSource)
+	//wait := incrementalWait(3*time.Second, 5*time.Second)
+	//var endpointResult string
+	//err = resource.Retry(5*time.Minute, func() *resource.RetryError {
+	//	endpointsResponse, err := locationClient.DescribeEndpoints(args)
+	//	if err != nil {
+	//		re := regexp.MustCompile("^Post [\"]*https://.*")
+	//		if err.Error() != "" && re.MatchString(err.Error()) {
+	//			wait()
+	//			return resource.RetryableError(err)
+	//		}
+	//		return resource.NonRetryableError(err)
+	//	}
+	//	if endpointsResponse != nil && len(endpointsResponse.Endpoints.Endpoint) > 0 {
+	//		for _, e := range endpointsResponse.Endpoints.Endpoint {
+	//			if e.Type == "openAPI" {
+	//				endpointResult = e.Endpoint
+	//				return nil
+	//			}
+	//		}
+	//	}
+	//	return nil
+	//})
+	//if err != nil {
+	//	return "", fmt.Errorf("Describe %s endpoint using region: %#v got an error: %#v.", serviceCode, client.RegionId, err)
+	//}
+	//if endpointResult == "" {
+	//	return "", fmt.Errorf("There is no any available endpoint for %s in region %s.", serviceCode, client.RegionId)
+	//}
+	return "ks3-cn-beijing.ksyuncs.com", nil
 }
 
 var serviceCodeMapping = map[string]string{
@@ -281,32 +208,5 @@ var serviceCodeMapping = map[string]string{
 }
 
 const (
-	OpenApiGatewayService          = "apigateway.cn-hangzhou.aliyuncs.com"
-	OpenOtsService                 = "ots.cn-hangzhou.aliyuncs.com"
-	OpenOssService                 = "ks3-admin.aliyuncs.com"
-	OpenNasService                 = "nas.cn-hangzhou.aliyuncs.com"
-	OpenCdnService                 = "cdn.aliyuncs.com"
-	OpenKmsService                 = "kms.cn-hangzhou.aliyuncs.com"
-	OpenSaeService                 = "sae.cn-hangzhou.aliyuncs.com"
-	OpenCmsService                 = "metrics.cn-hangzhou.aliyuncs.com"
-	OpenDatahubService             = "datahub.aliyuncs.com"
-	OpenOnsService                 = "ons.cn-hangzhou.aliyuncs.com"
-	OpenDcdnService                = "dcdn.aliyuncs.com"
-	OpenFcService                  = "fc-open.cn-hangzhou.aliyuncs.com"
-	OpenAckService                 = "cs.aliyuncs.com"
-	OpenPrivateLinkService         = "privatelink.cn-hangzhou.aliyuncs.com"
-	OpenBrainIndustrialService     = "brain-industrial-share.cn-hangzhou.aliyuncs.com"
-	OpenIotService                 = "iot.aliyuncs.com"
-	OpenVsService                  = "vs.cn-shanghai.aliyuncs.com"
-	OpenCrService                  = "cr.cn-hangzhou.aliyuncs.com"
-	OpenMaxcomputeService          = "maxcompute.aliyuncs.com"
-	OpenCloudStorageGatewayService = "sgw.cn-shanghai.aliyuncs.com"
-	DataWorksService               = "dataworks.aliyuncs.com"
-)
-
-const (
-	BssOpenAPIEndpointDomestic                = "business.aliyuncs.com"
-	BssOpenAPIEndpointInternational           = "business.ap-southeast-1.aliyuncs.com"
-	EcdOpenAPIEndpointUser                    = "eds-user.ap-southeast-1.aliyuncs.com"
-	CloudFirewallOpenAPIEndpointControlPolicy = "cloudfw.ap-southeast-1.aliyuncs.com"
+	OpenKS3Service = "ks3-cn-beijing.ksyuncs.com"
 )

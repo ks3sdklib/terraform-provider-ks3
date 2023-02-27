@@ -22,8 +22,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/mutexkv"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	"github.com/ksyun/terraform-provider-ks3/ksyun/connectivity"
 	"github.com/mitchellh/go-homedir"
+	"github.com/wilac-pv/terraform-provider-ks3/ksyun/connectivity"
 )
 
 // Provider returns a schema.Provider for ksyun

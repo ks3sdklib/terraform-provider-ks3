@@ -3,8 +3,8 @@ package ksyun
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
-	"github.com/ksyun/terraform-provider-ks3/ksyun/connectivity"
 	"github.com/wilac-pv/ksyun-ks3-go-sdk/ks3"
+	"github.com/wilac-pv/terraform-provider-ks3/ksyun/connectivity"
 	"io/ioutil"
 	"log"
 	"regexp"
