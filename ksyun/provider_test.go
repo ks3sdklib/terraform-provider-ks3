@@ -159,7 +159,7 @@ provider "ksyun" {
 func TestAccAlicloudProviderOss(t *testing.T) {
 	//var v ks3.GetBucketInfoResult
 
-	//resourceId := "alicloud_ks3_bucket.default"
+	//resourceId := "ksyun_ks3_bucket.default"
 	//ra := resourceAttrInit(resourceId, ks3BucketBasicMap)
 	//
 	//serviceFunc := func() interface{} {

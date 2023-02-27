@@ -127,7 +127,7 @@ func resourceKsyunKs3BucketObjectPut(d *schema.ResourceData, meta interface{}) e
 		return ks3Client.Bucket(d.Get("bucket").(string))
 	})
 	if err != nil {
-		return WrapErrorf(err, DefaultErrorMsg, "alicloud_ks3_bucket_object", "Bucket", KsyunKs3GoSdk)
+		return WrapErrorf(err, DefaultErrorMsg, "ksyun_ks3_bucket_object", "Bucket", KsyunKs3GoSdk)
 	}
 	addDebug("Bucket", raw, requestInfo, map[string]string{"bucketName": d.Get("bucket").(string)})
 	bucket, _ := raw.(*ks3.Bucket)

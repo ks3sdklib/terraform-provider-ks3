@@ -15,8 +15,8 @@ import (
 )
 
 func init() {
-	resource.AddTestSweepers("alicloud_ks3_bucket", &resource.Sweeper{
-		Name: "alicloud_ks3_bucket",
+	resource.AddTestSweepers("ksyun_ks3_bucket", &resource.Sweeper{
+		Name: "ksyun_ks3_bucket",
 		F:    testSweepOSSBuckets,
 	})
 }
@@ -99,7 +99,7 @@ func testSweepOSSBuckets(region string) error {
 func TestAccAlicloudOssBucketBasic(t *testing.T) {
 	var v ks3.GetBucketInfoResult
 
-	resourceId := "alicloud_ks3_bucket.default"
+	resourceId := "ksyun_ks3_bucket.default"
 	ra := resourceAttrInit(resourceId, ks3BucketBasicMap)
 
 	serviceFunc := func() interface{} {
@@ -247,7 +247,7 @@ func TestAccAlicloudOssBucketBasic(t *testing.T) {
 				Config: testAccConfig(map[string]interface{}{
 					"logging": []map[string]interface{}{
 						{
-							"target_bucket": "${alicloud_ks3_bucket.target.id}",
+							"target_bucket": "${ksyun_ks3_bucket.target.id}",
 							"target_prefix": "log/",
 						},
 					},
@@ -509,7 +509,7 @@ func TestAccAlicloudOssBucketBasic(t *testing.T) {
 func TestAccAlicloudOssBucketVersioning(t *testing.T) {
 	var v ks3.GetBucketInfoResult
 
-	resourceId := "alicloud_ks3_bucket.default"
+	resourceId := "ksyun_ks3_bucket.default"
 	ra := resourceAttrInit(resourceId, ks3BucketBasicMap)
 
 	serviceFunc := func() interface{} {
@@ -654,7 +654,7 @@ func TestAccAlicloudOssBucketVersioning(t *testing.T) {
 func TestAccAlicloudOssBucketCheckSseRule(t *testing.T) {
 	var v ks3.GetBucketInfoResult
 
-	resourceId := "alicloud_ks3_bucket.default"
+	resourceId := "ksyun_ks3_bucket.default"
 	ra := resourceAttrInit(resourceId, ks3BucketBasicMap)
 
 	serviceFunc := func() interface{} {
@@ -830,7 +830,7 @@ func TestAccAlicloudOssBucketCheckTransferAcc(t *testing.T) {
 
 func resourceOssBucketConfigDependence(name string) string {
 	return fmt.Sprintf(`
-resource "alicloud_ks3_bucket" "target"{
+resource "ksyun_ks3_bucket" "target"{
 	bucket = "%s-t"
 }
 `, name)
@@ -839,7 +839,7 @@ resource "alicloud_ks3_bucket" "target"{
 func TestAccAlicloudOssBucketBasic1(t *testing.T) {
 	var v ks3.GetBucketInfoResult
 
-	resourceId := "alicloud_ks3_bucket.default"
+	resourceId := "ksyun_ks3_bucket.default"
 	ra := resourceAttrInit(resourceId, ks3BucketBasicMap)
 
 	serviceFunc := func() interface{} {

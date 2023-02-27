@@ -29,7 +29,7 @@ func TestAccKsyunKs3BucketObject_basic(t *testing.T) {
 	}
 
 	var v http.Header
-	resourceId := "alicloud_ks3_bucket_object.default"
+	resourceId := "ksyun_ks3_bucket_object.default"
 	ra := resourceAttrInit(resourceId, ks3BucketObjectBasicMap)
 	testAccCheck := ra.resourceAttrMapUpdateSet()
 	rand := acctest.RandIntRange(1000000, 9999999)
@@ -46,14 +46,14 @@ func TestAccKsyunKs3BucketObject_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccConfig(map[string]interface{}{
-					"bucket":       "${alicloud_ks3_bucket.default.bucket}",
+					"bucket":       "${ksyun_ks3_bucket.default.bucket}",
 					"key":          "test-object-source-key",
 					"source":       tmpFile.Name(),
 					"content_type": "binary/octet-stream",
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckKsyunKs3BucketObjectExists(
-						"alicloud_ks3_bucket_object.default", name, v),
+						"ksyun_ks3_bucket_object.default", name, v),
 					testAccCheck(map[string]string{
 						"bucket": name,
 						"source": tmpFile.Name(),
@@ -67,7 +67,7 @@ func TestAccKsyunKs3BucketObject_basic(t *testing.T) {
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckKsyunKs3BucketObjectExists(
-						"alicloud_ks3_bucket_object.default", name, v),
+						"ksyun_ks3_bucket_object.default", name, v),
 					testAccCheck(map[string]string{
 						"source":  REMOVEKEY,
 						"content": "some words for test ks3 object content",
@@ -87,7 +87,7 @@ func TestAccKsyunKs3BucketObject_basic(t *testing.T) {
 			{
 				Config: testAccConfig(map[string]interface{}{
 					"server_side_encryption": "KMS",
-					"kms_key_id":             "${data.alicloud_kms_keys.enabled.ids.0}",
+					"kms_key_id":             "${data.ksyun_kms_keys.enabled.ids.0}",
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheck(map[string]string{}),
@@ -95,7 +95,7 @@ func TestAccKsyunKs3BucketObject_basic(t *testing.T) {
 			},
 			{
 				Config: testAccConfig(map[string]interface{}{
-					"bucket":                 "${alicloud_ks3_bucket.default.bucket}",
+					"bucket":                 "${ksyun_ks3_bucket.default.bucket}",
 					"server_side_encryption": "AES256",
 					"kms_key_id":             REMOVEKEY,
 					"key":                    "test-object-source-key",
@@ -106,7 +106,7 @@ func TestAccKsyunKs3BucketObject_basic(t *testing.T) {
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckKsyunKs3BucketObjectExists(
-						"alicloud_ks3_bucket_object.default", name, v),
+						"ksyun_ks3_bucket_object.default", name, v),
 					testAccCheck(map[string]string{
 						"bucket":       name,
 						"key":          "test-object-source-key",
@@ -124,10 +124,10 @@ func TestAccKsyunKs3BucketObject_basic(t *testing.T) {
 func resourceOssBucketObjectConfigDependence(name string) string {
 
 	return fmt.Sprintf(`
-resource "alicloud_ks3_bucket" "default" {
+resource "ksyun_ks3_bucket" "default" {
 	bucket = "%s"
 }
-data "alicloud_kms_keys" "enabled" {
+data "ksyun_kms_keys" "enabled" {
 	status = "Enabled"
 }
 `, name)
@@ -193,7 +193,7 @@ func testAccCheckOssBucketObjectDestroyWithProvider(s *terraform.State, provider
 	client := provider.Meta().(*connectivity.KsyunClient)
 	var bucket *ks3.Bucket
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "alicloud_ks3_bucket" {
+		if rs.Type != "ksyun_ks3_bucket" {
 			continue
 		}
 		raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
@@ -209,7 +209,7 @@ func testAccCheckOssBucketObjectDestroyWithProvider(s *terraform.State, provider
 	}
 
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "alicloud_ks3_bucket_object" {
+		if rs.Type != "ksyun_ks3_bucket_object" {
 			continue
 		}
 

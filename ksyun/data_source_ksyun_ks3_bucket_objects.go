@@ -133,7 +133,7 @@ func dataSourceKsyunKs3BucketObjectsRead(d *schema.ResourceData, meta interface{
 			return bucket.ListObjects(options...)
 		})
 		if err != nil {
-			return WrapErrorf(err, DataDefaultErrorMsg, "alicloud_ks3_bucket_object", "ListObjects", KsyunKs3GoSdk)
+			return WrapErrorf(err, DataDefaultErrorMsg, "ksyun_ks3_bucket_object", "ListObjects", KsyunKs3GoSdk)
 		}
 		if debugOn() {
 			addDebug("ListObjects", raw, requestInfo, map[string]interface{}{"options": options})

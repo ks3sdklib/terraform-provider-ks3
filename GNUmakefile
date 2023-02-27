@@ -3,7 +3,7 @@ GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 WEBSITE_REPO=github.com/hashicorp/terraform-website
 PKG_NAME=alicloud
 RELEASE_ALPHA_VERSION=$(VERSION)-alpha$(shell date +'%Y%m%d')
-RELEASE_ALPHA_NAME=terraform-provider-alicloud_v$(RELEASE_ALPHA_VERSION)
+RELEASE_ALPHA_NAME=terraform-provider-ks3_v$(RELEASE_ALPHA_VERSION)
 
 default: build
 
@@ -72,31 +72,31 @@ devlinux: clean fmt linux linuxcopy
 devwin: clean fmt windows windowscopy
 
 copy:
-	tar -xvf bin/terraform-provider-alicloud_darwin-amd64.tgz && mv bin/terraform-provider-alicloud $(shell dirname `which terraform`)
+	tar -xvf bin/terraform-provider-ks3_darwin-amd64.tgz && mv bin/terraform-provider-ks3 $(shell dirname `which terraform`)
 
 clean:
 	rm -rf bin/*
 
 mac:
-	GOOS=darwin GOARCH=amd64 go build -o bin/terraform-provider-alicloud
-	tar czvf bin/terraform-provider-alicloud_darwin-amd64.tgz bin/terraform-provider-alicloud
-	rm -rf bin/terraform-provider-alicloud
+	GOOS=darwin GOARCH=amd64 go build -o bin/terraform-provider-ks3
+	tar czvf bin/terraform-provider-ks3_darwin-amd64.tgz bin/terraform-provider-ks3
+	rm -rf bin/terraform-provider-ks3
 
 windowscopy:
-	tar -xvf bin/terraform-provider-alicloud_windows-amd64.tgz && mv bin/terraform-provider-alicloud $(shell dirname `which terraform`)
+	tar -xvf bin/terraform-provider-ks3_windows-amd64.tgz && mv bin/terraform-provider-ks3 $(shell dirname `which terraform`)
     
 windows:
-	GOOS=windows GOARCH=amd64 go build -o bin/terraform-provider-alicloud.exe
-	tar czvf bin/terraform-provider-alicloud_windows-amd64.tgz bin/terraform-provider-alicloud.exe
-	rm -rf bin/terraform-provider-alicloud.exe
+	GOOS=windows GOARCH=amd64 go build -o bin/terraform-provider-ks3.exe
+	tar czvf bin/terraform-provider-ks3_windows-amd64.tgz bin/terraform-provider-ks3.exe
+	rm -rf bin/terraform-provider-ks3.exe
 
 linuxcopy:
-	tar -xvf bin/terraform-provider-alicloud_linux-amd64.tgz && mv bin/terraform-provider-alicloud $(shell dirname `which terraform`)
+	tar -xvf bin/terraform-provider-ks3_linux-amd64.tgz && mv bin/terraform-provider-ks3 $(shell dirname `which terraform`)
 
 linux:
-	GOOS=linux GOARCH=amd64 go build -o bin/terraform-provider-alicloud
-	tar czvf bin/terraform-provider-alicloud_linux-amd64.tgz bin/terraform-provider-alicloud
-	rm -rf bin/terraform-provider-alicloud
+	GOOS=linux GOARCH=amd64 go build -o bin/terraform-provider-ks3
+	tar czvf bin/terraform-provider-ks3_linux-amd64.tgz bin/terraform-provider-ks3
+	rm -rf bin/terraform-provider-ks3
 
 alpha:
 	GOOS=linux GOARCH=amd64 go build -o bin/$(RELEASE_ALPHA_NAME)
@@ -105,6 +105,6 @@ alpha:
 	rm -rf bin/$(RELEASE_ALPHA_NAME)
 
 macarm:
-	GOOS=darwin GOARCH=arm64 go build -o $(GOPATH)/.terraform/plugins/registry.terraform.io/aliyun/alicloud/1.0.0/darwin_arm64/terraform-provider-alicloud_v1.0.0*
-#	tar czvf bin/terraform-provider-alicloud_darwin-arm64.tgz bin/terraform-provider-ksyun
+	GOOS=darwin GOARCH=arm64 go build -o $(GOPATH)/.terraform/plugins/registry.terraform.io/aliyun/alicloud/1.0.0/darwin_arm64/terraform-provider-ks3_v1.0.0*
+#	tar czvf bin/terraform-provider-ks3_darwin-arm64.tgz bin/terraform-provider-ksyun
 #	rm -rf bin/terraform-provider-ksyun

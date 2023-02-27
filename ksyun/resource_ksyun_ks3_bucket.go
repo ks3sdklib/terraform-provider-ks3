@@ -379,7 +379,7 @@ func resourceAlicloudOssBucketCreate(d *schema.ResourceData, meta interface{}) e
 		return ks3Client.IsBucketExist(request["bucketName"])
 	})
 	if err != nil {
-		return WrapErrorf(err, DefaultErrorMsg, "alicloud_ks3_bucket", "IsBucketExist", KsyunKs3GoSdk)
+		return WrapErrorf(err, DefaultErrorMsg, "ksyun_ks3_bucket", "IsBucketExist", KsyunKs3GoSdk)
 	}
 	addDebug("IsBucketExist", raw, requestInfo, request)
 	isExist, _ := raw.(bool)
@@ -401,7 +401,7 @@ func resourceAlicloudOssBucketCreate(d *schema.ResourceData, meta interface{}) e
 		return nil, ks3Client.CreateBucket(req.BucketName, req.StorageClassOption, req.AclTypeOption)
 	})
 	if err != nil {
-		return WrapErrorf(err, DefaultErrorMsg, "alicloud_ks3_bucket", "CreateBucket", KsyunKs3GoSdk)
+		return WrapErrorf(err, DefaultErrorMsg, "ksyun_ks3_bucket", "CreateBucket", KsyunKs3GoSdk)
 	}
 	addDebug("CreateBucket", raw, requestInfo, req)
 	err = resource.Retry(3*time.Minute, func() *resource.RetryError {
@@ -421,7 +421,7 @@ func resourceAlicloudOssBucketCreate(d *schema.ResourceData, meta interface{}) e
 	})
 
 	if err != nil {
-		return WrapErrorf(err, DefaultErrorMsg, "alicloud_ks3_bucket", "IsBucketExist", KsyunKs3GoSdk)
+		return WrapErrorf(err, DefaultErrorMsg, "ksyun_ks3_bucket", "IsBucketExist", KsyunKs3GoSdk)
 	}
 
 	// Assign the bucket name as the resource ID

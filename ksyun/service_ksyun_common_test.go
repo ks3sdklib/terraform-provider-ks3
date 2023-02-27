@@ -48,7 +48,7 @@ type ResourceTestAccConfigFunc func(map[string]interface{}) string
 
 // check the existence of resource
 type resourceCheck struct {
-	// IDRefreshName, like "alicloud_instance.foo"
+	// IDRefreshName, like "ksyun_instance.foo"
 	resourceId string
 
 	// The response of the service method DescribeXXX
@@ -177,14 +177,14 @@ func (rc *resourceCheck) checkResourceDestroy() resource.TestCheckFunc {
 		strs := strings.Split(rc.resourceId, ".")
 		var resourceType string
 		for _, str := range strs {
-			if strings.Contains(str, "alicloud_") {
+			if strings.Contains(str, "ksyun_") {
 				resourceType = strings.Trim(str, " ")
 				break
 			}
 		}
 
 		if resourceType == "" {
-			return WrapError(Error("The resourceId %s is not correct and it should prefix with alicloud_", rc.resourceId))
+			return WrapError(Error("The resourceId %s is not correct and it should prefix with ksyun_", rc.resourceId))
 		}
 
 		for _, rs := range s.RootModule().Resources {
@@ -250,11 +250,11 @@ func (rc *resourceCheck) callDescribeMethod(rs *terraform.ResourceState) ([]refl
 }
 
 func getResourceDescribeMethod(resourceId string) (string, error) {
-	start := strings.Index(resourceId, "alicloud_")
+	start := strings.Index(resourceId, "ksyun_")
 	if start < 0 {
-		return "", WrapError(fmt.Errorf("the parameter \"name\" don't contain string \"alicloud_\""))
+		return "", WrapError(fmt.Errorf("the parameter \"name\" don't contain string \"ksyun_\""))
 	}
-	start += len("alicloud_")
+	start += len("ksyun_")
 	end := strings.Index(resourceId[start:], ".") + start
 	if end < 0 {
 		return "", WrapError(fmt.Errorf("the parameter \"name\" don't contain string \".\""))
@@ -562,7 +562,7 @@ func addIndentation(indentation int) string {
 // order to reduce redundant code.
 // dataSourceAttr has 3 field ,incloud resourceId  existMapFunc fakeMapFunc, every dataSource test can use only one
 type dataSourceAttr struct {
-	// IDRefreshName, like "data.alicloud_dns_records.record"
+	// IDRefreshName, like "data.ksyun_dns_records.record"
 	resourceId string
 
 	// get existMap function
@@ -648,187 +648,187 @@ func (conf *dataSourceTestAccConfig) buildDataSourceSteps(t *testing.T, info *da
 }
 
 const EcsInstanceCommonNoZonesTestCase = `
-data "alicloud_instance_types" "default" {
+data "ksyun_instance_types" "default" {
   cpu_core_count    = 1
   memory_size       = 2
 }
-data "alicloud_images" "default" {
+data "ksyun_images" "default" {
   name_regex  = "^ubuntu_[0-9]+_[0-9]+_x64*"
   most_recent = true
   owners      = "system"
 }
 
-data "alicloud_vpcs" "default" {
+data "ksyun_vpcs" "default" {
     name_regex = "^default-NODELETING$"
 }
 
-data "alicloud_vswitches" "default" {
-  vpc_id  = data.alicloud_vpcs.default.ids.0
-  zone_id = data.alicloud_instance_types.default.instance_types.0.availability_zones.0
+data "ksyun_vswitches" "default" {
+  vpc_id  = data.ksyun_vpcs.default.ids.0
+  zone_id = data.ksyun_instance_types.default.instance_types.0.availability_zones.0
 }
-resource "alicloud_security_group" "default" {
+resource "ksyun_security_group" "default" {
   name   = "${var.name}"
-  vpc_id = data.alicloud_vpcs.default.ids.0
+  vpc_id = data.ksyun_vpcs.default.ids.0
 }
-resource "alicloud_security_group_rule" "default" {
+resource "ksyun_security_group_rule" "default" {
   	type = "ingress"
   	ip_protocol = "tcp"
   	nic_type = "intranet"
   	policy = "accept"
   	port_range = "22/22"
   	priority = 1
-  	security_group_id = "${alicloud_security_group.default.id}"
+  	security_group_id = "${ksyun_security_group.default.id}"
   	cidr_ip = "172.16.0.0/24"
 }
 `
 
 const EcsInstanceCommonTestCase = `
-data "alicloud_zones" "default" {
+data "ksyun_zones" "default" {
   available_disk_category     = "cloud_efficiency"
   available_resource_creation = "VSwitch"
 }
-data "alicloud_instance_types" "default" {
-  availability_zone = "${data.alicloud_zones.default.zones.0.id}"
+data "ksyun_instance_types" "default" {
+  availability_zone = "${data.ksyun_zones.default.zones.0.id}"
 }
-data "alicloud_images" "default" {
+data "ksyun_images" "default" {
   name_regex  = "^ubuntu"
   most_recent = true
   owners      = "system"
 }
-resource "alicloud_vpc" "default" {
+resource "ksyun_vpc" "default" {
   vpc_name       = "${var.name}"
   cidr_block = "172.16.0.0/16"
 }
-resource "alicloud_vswitch" "default" {
-  vpc_id            = "${alicloud_vpc.default.id}"
+resource "ksyun_vswitch" "default" {
+  vpc_id            = "${ksyun_vpc.default.id}"
   cidr_block        = "172.16.0.0/24"
-  zone_id = "${data.alicloud_zones.default.zones.0.id}"
+  zone_id = "${data.ksyun_zones.default.zones.0.id}"
   vswitch_name              = "${var.name}"
 }
-resource "alicloud_security_group" "default" {
+resource "ksyun_security_group" "default" {
   name   = "${var.name}"
-  vpc_id = "${alicloud_vpc.default.id}"
+  vpc_id = "${ksyun_vpc.default.id}"
 }
-resource "alicloud_security_group_rule" "default" {
+resource "ksyun_security_group_rule" "default" {
   	type = "ingress"
   	ip_protocol = "tcp"
   	nic_type = "intranet"
   	policy = "accept"
   	port_range = "22/22"
   	priority = 1
-  	security_group_id = "${alicloud_security_group.default.id}"
+  	security_group_id = "${ksyun_security_group.default.id}"
   	cidr_ip = "172.16.0.0/24"
 }
 `
 const PolarDBCommonTestCase = `
-data "alicloud_polardb_zones" "default"{}
-data "alicloud_vpcs" "default" {
+data "ksyun_polardb_zones" "default"{}
+data "ksyun_vpcs" "default" {
 	name_regex = "^default-NODELETING$"
 }
-data "alicloud_vswitches" "default" {
+data "ksyun_vswitches" "default" {
 	zone_id = local.zone_id
-	vpc_id = data.alicloud_vpcs.default.ids.0
+	vpc_id = data.ksyun_vpcs.default.ids.0
 }
-resource "alicloud_vswitch" "this" {
- count = length(data.alicloud_vswitches.default.ids) > 0 ? 0 : 1
+resource "ksyun_vswitch" "this" {
+ count = length(data.ksyun_vswitches.default.ids) > 0 ? 0 : 1
  vswitch_name = "tf_testAccPolarDB"
- vpc_id = data.alicloud_vpcs.default.ids.0
- zone_id = data.alicloud_polardb_zones.default.ids.0
- cidr_block = cidrsubnet(data.alicloud_vpcs.default.vpcs.0.cidr_block, 8, 4)
+ vpc_id = data.ksyun_vpcs.default.ids.0
+ zone_id = data.ksyun_polardb_zones.default.ids.0
+ cidr_block = cidrsubnet(data.ksyun_vpcs.default.vpcs.0.cidr_block, 8, 4)
 }
 locals {
-  vpc_id = data.alicloud_vpcs.default.ids.0
-  vswitch_id = length(data.alicloud_vswitches.default.ids) > 0 ? data.alicloud_vswitches.default.ids.0 : concat(alicloud_vswitch.this.*.id, [""])[0]
-  zone_id = data.alicloud_polardb_zones.default.ids[length(data.alicloud_polardb_zones.default.ids)-1]
+  vpc_id = data.ksyun_vpcs.default.ids.0
+  vswitch_id = length(data.ksyun_vswitches.default.ids) > 0 ? data.ksyun_vswitches.default.ids.0 : concat(ksyun_vswitch.this.*.id, [""])[0]
+  zone_id = data.ksyun_polardb_zones.default.ids[length(data.ksyun_polardb_zones.default.ids)-1]
 }
 `
 const AdbCommonTestCase = `
-data "alicloud_adb_zones" "default" {}
-data "alicloud_vpcs" "default" {
+data "ksyun_adb_zones" "default" {}
+data "ksyun_vpcs" "default" {
 	name_regex = "^default-NODELETING$"
 }
-data "alicloud_vswitches" "default" {
-  vpc_id = data.alicloud_vpcs.default.ids.0
-  zone_id = data.alicloud_adb_zones.default.ids.0
+data "ksyun_vswitches" "default" {
+  vpc_id = data.ksyun_vpcs.default.ids.0
+  zone_id = data.ksyun_adb_zones.default.ids.0
 }
 
 locals {
-  vswitch_id = data.alicloud_vswitches.default.ids.0
+  vswitch_id = data.ksyun_vswitches.default.ids.0
 }
 `
 
 const KVStoreCommonTestCase = `
-data "alicloud_kvstore_zones" "default"{
+data "ksyun_kvstore_zones" "default"{
 	instance_charge_type = "PostPaid"
 }
-data "alicloud_vpcs" "default" {
+data "ksyun_vpcs" "default" {
 	name_regex = "^default-NODELETING$"
 }
-data "alicloud_vswitches" "default" {
-	zone_id = data.alicloud_kvstore_zones.default.zones[length(data.alicloud_kvstore_zones.default.ids) - 1].id
-	vpc_id = data.alicloud_vpcs.default.ids.0
+data "ksyun_vswitches" "default" {
+	zone_id = data.ksyun_kvstore_zones.default.zones[length(data.ksyun_kvstore_zones.default.ids) - 1].id
+	vpc_id = data.ksyun_vpcs.default.ids.0
 }
 `
 
 const DBMultiAZCommonTestCase = `
-data "alicloud_zones" "default" {
+data "ksyun_zones" "default" {
   available_resource_creation = "${var.creation}"
   multi = true
 }
-resource "alicloud_vpc" "default" {
+resource "ksyun_vpc" "default" {
   vpc_name       = "${var.name}"
   cidr_block = "172.16.0.0/16"
 }
-resource "alicloud_vswitch" "default" {
-  vpc_id            = "${alicloud_vpc.default.id}"
+resource "ksyun_vswitch" "default" {
+  vpc_id            = "${ksyun_vpc.default.id}"
   cidr_block        = "172.16.0.0/24"
-  availability_zone = "${data.alicloud_zones.default.zones.0.multi_zone_ids[0]}"
+  availability_zone = "${data.ksyun_zones.default.zones.0.multi_zone_ids[0]}"
   name              = "${var.name}"
 }
 `
 
 const ElasticsearchInstanceCommonTestCase = `
-data "alicloud_elasticsearch_zones" "default" {}
-data "alicloud_vpcs" "default" {
+data "ksyun_elasticsearch_zones" "default" {}
+data "ksyun_vpcs" "default" {
     name_regex = "^default-NODELETING$"
 }
-data "alicloud_vswitches" "default" {
-  vpc_id = data.alicloud_vpcs.default.ids.0
-  zone_id = data.alicloud_elasticsearch_zones.default.ids[length(data.alicloud_elasticsearch_zones.default.ids)-1]
+data "ksyun_vswitches" "default" {
+  vpc_id = data.ksyun_vpcs.default.ids.0
+  zone_id = data.ksyun_elasticsearch_zones.default.ids[length(data.ksyun_elasticsearch_zones.default.ids)-1]
 }
 
 locals {
-  vswitch_id = data.alicloud_vswitches.default.ids[0]
+  vswitch_id = data.ksyun_vswitches.default.ids[0]
 }
 
 `
 
 const SlbVpcCommonTestCase = `
-data "alicloud_zones" "default" {
+data "ksyun_zones" "default" {
 	available_resource_creation= "VSwitch"
 }
 
-resource "alicloud_vpc" "default" {
+resource "ksyun_vpc" "default" {
   vpc_name = "${var.name}"
   cidr_block = "172.16.0.0/12"
 }
 
-resource "alicloud_vswitch" "default" {
-  vpc_id = "${alicloud_vpc.default.id}"
+resource "ksyun_vswitch" "default" {
+  vpc_id = "${ksyun_vpc.default.id}"
   cidr_block = "172.16.0.0/21"
-  availability_zone = "${data.alicloud_zones.default.zones.0.id}"
+  availability_zone = "${data.ksyun_zones.default.zones.0.id}"
   name = "${var.name}"
 }
 `
 
 const EmrCommonTestCase = `
-data "alicloud_resource_manager_resource_groups" "default" {}
+data "ksyun_resource_manager_resource_groups" "default" {}
 
-data "alicloud_emr_main_versions" "default" {
+data "ksyun_emr_main_versions" "default" {
 	cluster_type = ["HADOOP"]
 }
 
-data "alicloud_emr_instance_types" "default" {
+data "ksyun_emr_instance_types" "default" {
     destination_resource = "InstanceType"
     cluster_type = "HADOOP"
     support_local_storage = false
@@ -836,40 +836,40 @@ data "alicloud_emr_instance_types" "default" {
     support_node_type = ["MASTER", "CORE"]
 }
 
-data "alicloud_emr_disk_types" "data_disk" {
+data "ksyun_emr_disk_types" "data_disk" {
 	destination_resource = "DataDisk"
 	cluster_type = "HADOOP"
 	instance_charge_type = "PostPaid"
-	instance_type = data.alicloud_emr_instance_types.default.types.0.id
-	zone_id = data.alicloud_emr_instance_types.default.types.0.zone_id
+	instance_type = data.ksyun_emr_instance_types.default.types.0.id
+	zone_id = data.ksyun_emr_instance_types.default.types.0.zone_id
 }
 
-data "alicloud_emr_disk_types" "system_disk" {
+data "ksyun_emr_disk_types" "system_disk" {
 	destination_resource = "SystemDisk"
 	cluster_type = "HADOOP"
 	instance_charge_type = "PostPaid"
-	instance_type = data.alicloud_emr_instance_types.default.types.0.id
-	zone_id = data.alicloud_emr_instance_types.default.types.0.zone_id
+	instance_type = data.ksyun_emr_instance_types.default.types.0.id
+	zone_id = data.ksyun_emr_instance_types.default.types.0.zone_id
 }
 
-resource "alicloud_vpc" "default" {
+resource "ksyun_vpc" "default" {
   vpc_name = "${var.name}"
   cidr_block = "172.16.0.0/12"
 }
 
-resource "alicloud_vswitch" "default" {
-  vpc_id = "${alicloud_vpc.default.id}"
+resource "ksyun_vswitch" "default" {
+  vpc_id = "${ksyun_vpc.default.id}"
   cidr_block = "172.16.0.0/21"
-  zone_id = "${data.alicloud_emr_instance_types.default.types.0.zone_id}"
+  zone_id = "${data.ksyun_emr_instance_types.default.types.0.zone_id}"
   vswitch_name = "${var.name}"
 }
 
-resource "alicloud_security_group" "default" {
+resource "ksyun_security_group" "default" {
   name = "${var.name}"
-  vpc_id = "${alicloud_vpc.default.id}"
+  vpc_id = "${ksyun_vpc.default.id}"
 }
 
-resource "alicloud_ram_role" "default" {
+resource "ksyun_ram_role" "default" {
 	name = "${var.name}"
 	document = <<EOF
     {
@@ -894,12 +894,12 @@ resource "alicloud_ram_role" "default" {
 `
 
 const EmrHadoopClusterTestCase = `
-data "alicloud_emr_main_versions" "default" {
+data "ksyun_emr_main_versions" "default" {
 	cluster_type = ["HADOOP"]
 	emr_version = "EMR-3.24.0"
 }
 
-data "alicloud_db_zones" "default" {
+data "ksyun_db_zones" "default" {
 	engine = "MySQL"
 	engine_version = "8.0"
 	category = "Basic"
@@ -907,33 +907,33 @@ data "alicloud_db_zones" "default" {
 	db_instance_storage_type = "cloud_essd"
 }
 
-data "alicloud_emr_instance_types" "default" {
+data "ksyun_emr_instance_types" "default" {
 	destination_resource = "InstanceType"
 	cluster_type = "HADOOP"
-	zone_id = data.alicloud_db_zones.default.ids[length(data.alicloud_db_zones.default.ids)-1]
+	zone_id = data.ksyun_db_zones.default.ids[length(data.ksyun_db_zones.default.ids)-1]
 	support_local_storage = false
 	instance_charge_type = "PostPaid"
 	support_node_type = ["MASTER", "CORE"]
 }
 
-data "alicloud_emr_disk_types" "data_disk" {
+data "ksyun_emr_disk_types" "data_disk" {
 	destination_resource = "DataDisk"
 	cluster_type = "HADOOP"
 	instance_charge_type = "PostPaid"
-	instance_type = data.alicloud_emr_instance_types.default.types.0.id
-	zone_id = data.alicloud_db_zones.default.ids[length(data.alicloud_db_zones.default.ids)-1]
+	instance_type = data.ksyun_emr_instance_types.default.types.0.id
+	zone_id = data.ksyun_db_zones.default.ids[length(data.ksyun_db_zones.default.ids)-1]
 }
 
-data "alicloud_emr_disk_types" "system_disk" {
+data "ksyun_emr_disk_types" "system_disk" {
 	destination_resource = "SystemDisk"
 	cluster_type = "HADOOP"
 	instance_charge_type = "PostPaid"
-	instance_type = data.alicloud_emr_instance_types.default.types.0.id
-	zone_id = data.alicloud_db_zones.default.ids[length(data.alicloud_db_zones.default.ids)-1]
+	instance_type = data.ksyun_emr_instance_types.default.types.0.id
+	zone_id = data.ksyun_db_zones.default.ids[length(data.ksyun_db_zones.default.ids)-1]
 }
 
-data "alicloud_db_instance_classes" "default" {
-	zone_id = data.alicloud_db_zones.default.ids[length(data.alicloud_db_zones.default.ids)-1]
+data "ksyun_db_instance_classes" "default" {
+	zone_id = data.ksyun_db_zones.default.ids[length(data.ksyun_db_zones.default.ids)-1]
 	engine = "MySQL"
 	engine_version = "8.0"
 	category = "Basic"
@@ -941,45 +941,45 @@ data "alicloud_db_instance_classes" "default" {
 	instance_charge_type = "PostPaid"
 }
 
-resource "alicloud_vpc" "default" {
+resource "ksyun_vpc" "default" {
 	vpc_name = "${var.name}"
 	cidr_block = "172.16.0.0/12"
 }
 
-resource "alicloud_vswitch" "default" {
-	vpc_id = "${alicloud_vpc.default.id}"
+resource "ksyun_vswitch" "default" {
+	vpc_id = "${ksyun_vpc.default.id}"
 	cidr_block = "172.16.0.0/21"
-	zone_id = data.alicloud_db_zones.default.ids[length(data.alicloud_db_zones.default.ids)-1]
+	zone_id = data.ksyun_db_zones.default.ids[length(data.ksyun_db_zones.default.ids)-1]
 	vswitch_name = "${var.name}"
 }
 
-resource "alicloud_security_group" "default" {
+resource "ksyun_security_group" "default" {
     name = "${var.name}"
-    vpc_id = "${alicloud_vpc.default.id}"
+    vpc_id = "${ksyun_vpc.default.id}"
 }
 
-resource "alicloud_db_instance" "default" {
+resource "ksyun_db_instance" "default" {
 	engine = "MySQL"
 	engine_version = "8.0"
-	instance_type = data.alicloud_db_instance_classes.default.instance_classes.0.instance_class
-	instance_storage = data.alicloud_db_instance_classes.default.instance_classes.0.storage_range.min
-	zone_id = data.alicloud_db_zones.default.ids[length(data.alicloud_db_zones.default.ids)-1]
+	instance_type = data.ksyun_db_instance_classes.default.instance_classes.0.instance_class
+	instance_storage = data.ksyun_db_instance_classes.default.instance_classes.0.storage_range.min
+	zone_id = data.ksyun_db_zones.default.ids[length(data.ksyun_db_zones.default.ids)-1]
 	instance_charge_type = "Postpaid"
 	db_instance_storage_type = "cloud_essd"
-	vswitch_id = "${alicloud_vswitch.default.id}"
+	vswitch_id = "${ksyun_vswitch.default.id}"
 	instance_name = "${var.name}"
-	security_ips = ["${alicloud_vswitch.default.cidr_block}"]
+	security_ips = ["${ksyun_vswitch.default.cidr_block}"]
 }
 
-resource "alicloud_rds_account" "default" {
-	db_instance_id = "${alicloud_db_instance.default.id}"
+resource "ksyun_rds_account" "default" {
+	db_instance_id = "${ksyun_db_instance.default.id}"
 	account_type = "Normal"
 	account_name = "taihao"
 	account_password = "EMRtest1234!"
 	account_description = "tf-test"
 }
 
-resource "alicloud_ram_role" "default" {
+resource "ksyun_ram_role" "default" {
 	name = "${var.name}"
 	document = <<EOF
     {
@@ -1004,19 +1004,19 @@ resource "alicloud_ram_role" "default" {
 `
 
 const EmrGatewayTestCase = `
-data "alicloud_emr_main_versions" "default" {
+data "ksyun_emr_main_versions" "default" {
 	cluster_type = ["HADOOP"]
 }
 
-data "alicloud_emr_instance_types" "default" {
+data "ksyun_emr_instance_types" "default" {
     destination_resource = "InstanceType"
-    cluster_type = data.alicloud_emr_main_versions.default.main_versions.0.cluster_types.0
+    cluster_type = data.ksyun_emr_main_versions.default.main_versions.0.cluster_types.0
     support_local_storage = false
     instance_charge_type = "PostPaid"
     support_node_type = ["MASTER","CORE"]
 }
 
-data "alicloud_emr_instance_types" "gateway" {
+data "ksyun_emr_instance_types" "gateway" {
     destination_resource = "InstanceType"
     cluster_type = "GATEWAY"
     support_local_storage = false
@@ -1024,56 +1024,56 @@ data "alicloud_emr_instance_types" "gateway" {
     support_node_type = ["GATEWAY"]
 }
 
-data "alicloud_emr_disk_types" "data_disk" {
+data "ksyun_emr_disk_types" "data_disk" {
 	destination_resource = "DataDisk"
-	cluster_type = data.alicloud_emr_main_versions.default.main_versions.0.cluster_types.0
+	cluster_type = data.ksyun_emr_main_versions.default.main_versions.0.cluster_types.0
 	instance_charge_type = "PostPaid"
-	instance_type = data.alicloud_emr_instance_types.default.types.0.id
-	zone_id = data.alicloud_emr_instance_types.default.types.0.zone_id
+	instance_type = data.ksyun_emr_instance_types.default.types.0.id
+	zone_id = data.ksyun_emr_instance_types.default.types.0.zone_id
 }
 
-data "alicloud_emr_disk_types" "gateway_data_disk" {
+data "ksyun_emr_disk_types" "gateway_data_disk" {
 	destination_resource = "DataDisk"
 	cluster_type = "GATEWAY"
 	instance_charge_type = "PostPaid"
-	instance_type = data.alicloud_emr_instance_types.gateway.types.0.id
-	zone_id = data.alicloud_emr_instance_types.gateway.types.0.zone_id
+	instance_type = data.ksyun_emr_instance_types.gateway.types.0.id
+	zone_id = data.ksyun_emr_instance_types.gateway.types.0.zone_id
 }
 
-data "alicloud_emr_disk_types" "system_disk" {
+data "ksyun_emr_disk_types" "system_disk" {
 	destination_resource = "SystemDisk"
-	cluster_type = data.alicloud_emr_main_versions.default.main_versions.0.cluster_types.0
+	cluster_type = data.ksyun_emr_main_versions.default.main_versions.0.cluster_types.0
 	instance_charge_type = "PostPaid"
-	instance_type = data.alicloud_emr_instance_types.default.types.0.id
-	zone_id = data.alicloud_emr_instance_types.default.types.0.zone_id
+	instance_type = data.ksyun_emr_instance_types.default.types.0.id
+	zone_id = data.ksyun_emr_instance_types.default.types.0.zone_id
 }
 
-data "alicloud_emr_disk_types" "gateway_system_disk" {
+data "ksyun_emr_disk_types" "gateway_system_disk" {
 	destination_resource = "SystemDisk"
 	cluster_type = "GATEWAY"
 	instance_charge_type = "PostPaid"
-	instance_type = data.alicloud_emr_instance_types.gateway.types.0.id
-	zone_id = data.alicloud_emr_instance_types.gateway.types.0.zone_id
+	instance_type = data.ksyun_emr_instance_types.gateway.types.0.id
+	zone_id = data.ksyun_emr_instance_types.gateway.types.0.zone_id
 }
 
-resource "alicloud_vpc" "default" {
+resource "ksyun_vpc" "default" {
   vpc_name = "${var.name}"
   cidr_block = "172.16.0.0/12"
 }
 
-resource "alicloud_vswitch" "default" {
-  vpc_id = "${alicloud_vpc.default.id}"
+resource "ksyun_vswitch" "default" {
+  vpc_id = "${ksyun_vpc.default.id}"
   cidr_block = "172.16.0.0/21"
-  zone_id = "${data.alicloud_emr_instance_types.default.types.0.zone_id}"
+  zone_id = "${data.ksyun_emr_instance_types.default.types.0.zone_id}"
   vswitch_name = "${var.name}"
 }
 
-resource "alicloud_security_group" "default" {
+resource "ksyun_security_group" "default" {
     name = "${var.name}"
-    vpc_id = "${alicloud_vpc.default.id}"
+    vpc_id = "${ksyun_vpc.default.id}"
 }
 
-resource "alicloud_ram_role" "default" {
+resource "ksyun_ram_role" "default" {
 	name = "${var.name}"
 	document = <<EOF
     {
@@ -1096,104 +1096,104 @@ resource "alicloud_ram_role" "default" {
     force = true
 }
 
-resource "alicloud_emr_cluster" "default" {
+resource "ksyun_emr_cluster" "default" {
     name = "${var.name}"
 
-    emr_ver = data.alicloud_emr_main_versions.default.main_versions.0.emr_version
+    emr_ver = data.ksyun_emr_main_versions.default.main_versions.0.emr_version
 
-    cluster_type = data.alicloud_emr_main_versions.default.main_versions.0.cluster_types.0
+    cluster_type = data.ksyun_emr_main_versions.default.main_versions.0.cluster_types.0
 
     host_group {
         host_group_name = "master_group"
         host_group_type = "MASTER"
         node_count = "2"
-        instance_type = data.alicloud_emr_instance_types.default.types.0.id
-        disk_type = data.alicloud_emr_disk_types.data_disk.types.0.value
-        disk_capacity = data.alicloud_emr_disk_types.data_disk.types.0.min > 160 ? data.alicloud_emr_disk_types.data_disk.types.0.min : 160
+        instance_type = data.ksyun_emr_instance_types.default.types.0.id
+        disk_type = data.ksyun_emr_disk_types.data_disk.types.0.value
+        disk_capacity = data.ksyun_emr_disk_types.data_disk.types.0.min > 160 ? data.ksyun_emr_disk_types.data_disk.types.0.min : 160
         disk_count = "1"
-        sys_disk_type = data.alicloud_emr_disk_types.system_disk.types.0.value
-		sys_disk_capacity = data.alicloud_emr_disk_types.system_disk.types.0.min > 160 ? data.alicloud_emr_disk_types.system_disk.types.0.min : 160
+        sys_disk_type = data.ksyun_emr_disk_types.system_disk.types.0.value
+		sys_disk_capacity = data.ksyun_emr_disk_types.system_disk.types.0.min > 160 ? data.ksyun_emr_disk_types.system_disk.types.0.min : 160
     }
 
 	host_group {
         host_group_name = "core_group"
         host_group_type = "CORE"
         node_count = "2"
-        instance_type = data.alicloud_emr_instance_types.default.types.0.id
-        disk_type = data.alicloud_emr_disk_types.data_disk.types.0.value
-        disk_capacity = data.alicloud_emr_disk_types.data_disk.types.0.min > 160 ? data.alicloud_emr_disk_types.data_disk.types.0.min : 160
+        instance_type = data.ksyun_emr_instance_types.default.types.0.id
+        disk_type = data.ksyun_emr_disk_types.data_disk.types.0.value
+        disk_capacity = data.ksyun_emr_disk_types.data_disk.types.0.min > 160 ? data.ksyun_emr_disk_types.data_disk.types.0.min : 160
         disk_count = "4"
-        sys_disk_type = data.alicloud_emr_disk_types.system_disk.types.0.value
-        sys_disk_capacity = data.alicloud_emr_disk_types.system_disk.types.0.min > 160 ? data.alicloud_emr_disk_types.system_disk.types.0.min : 160
+        sys_disk_type = data.ksyun_emr_disk_types.system_disk.types.0.value
+        sys_disk_capacity = data.ksyun_emr_disk_types.system_disk.types.0.min > 160 ? data.ksyun_emr_disk_types.system_disk.types.0.min : 160
     }
 
     high_availability_enable = true
     meta_store_type = "local"
-    zone_id = data.alicloud_emr_instance_types.default.types.0.zone_id
-    security_group_id = alicloud_security_group.default.id
+    zone_id = data.ksyun_emr_instance_types.default.types.0.zone_id
+    security_group_id = ksyun_security_group.default.id
     is_open_public_ip = true
     charge_type = "PostPaid"
-    vswitch_id = alicloud_vswitch.default.id
-    user_defined_emr_ecs_role = alicloud_ram_role.default.name
+    vswitch_id = ksyun_vswitch.default.id
+    user_defined_emr_ecs_role = ksyun_ram_role.default.name
     ssh_enable = true
     master_pwd = "ABCtest1234!"
 }
 `
 const EmrLocalStorageTestCase = `
-data "alicloud_emr_main_versions" "default" {
+data "ksyun_emr_main_versions" "default" {
 	cluster_type = ["HADOOP"]
 }
 
-data "alicloud_emr_instance_types" "local_disk" {
+data "ksyun_emr_instance_types" "local_disk" {
     destination_resource = "InstanceType"
-    cluster_type = data.alicloud_emr_main_versions.default.main_versions.0.cluster_types.0
+    cluster_type = data.ksyun_emr_main_versions.default.main_versions.0.cluster_types.0
     support_local_storage = true
     instance_charge_type = "PostPaid"
     support_node_type = ["MASTER","CORE"]
 }
 
-data "alicloud_emr_instance_types" "cloud_disk" {
+data "ksyun_emr_instance_types" "cloud_disk" {
     destination_resource = "InstanceType"
-    cluster_type = data.alicloud_emr_main_versions.default.main_versions.0.cluster_types.0
+    cluster_type = data.ksyun_emr_main_versions.default.main_versions.0.cluster_types.0
     instance_charge_type = "PostPaid"
     support_node_type = ["MASTER"]
-    zone_id = data.alicloud_emr_instance_types.local_disk.types.0.zone_id
+    zone_id = data.ksyun_emr_instance_types.local_disk.types.0.zone_id
 }
 
-data "alicloud_emr_disk_types" "data_disk" {
+data "ksyun_emr_disk_types" "data_disk" {
 	destination_resource = "DataDisk"
-	cluster_type = data.alicloud_emr_main_versions.default.main_versions.0.cluster_types.0
+	cluster_type = data.ksyun_emr_main_versions.default.main_versions.0.cluster_types.0
 	instance_charge_type = "PostPaid"
-	instance_type = data.alicloud_emr_instance_types.cloud_disk.types.0.id
-	zone_id = data.alicloud_emr_instance_types.cloud_disk.types.0.zone_id
+	instance_type = data.ksyun_emr_instance_types.cloud_disk.types.0.id
+	zone_id = data.ksyun_emr_instance_types.cloud_disk.types.0.zone_id
 }
 
-data "alicloud_emr_disk_types" "system_disk" {
+data "ksyun_emr_disk_types" "system_disk" {
 	destination_resource = "SystemDisk"
-	cluster_type = data.alicloud_emr_main_versions.default.main_versions.0.cluster_types.0
+	cluster_type = data.ksyun_emr_main_versions.default.main_versions.0.cluster_types.0
 	instance_charge_type = "PostPaid"
-	instance_type = data.alicloud_emr_instance_types.cloud_disk.types.0.id
-	zone_id = data.alicloud_emr_instance_types.cloud_disk.types.0.zone_id
+	instance_type = data.ksyun_emr_instance_types.cloud_disk.types.0.id
+	zone_id = data.ksyun_emr_instance_types.cloud_disk.types.0.zone_id
 }
 
-resource "alicloud_vpc" "default" {
+resource "ksyun_vpc" "default" {
   vpc_name = "${var.name}"
   cidr_block = "172.16.0.0/12"
 }
 
-resource "alicloud_vswitch" "default" {
-  vpc_id = "${alicloud_vpc.default.id}"
+resource "ksyun_vswitch" "default" {
+  vpc_id = "${ksyun_vpc.default.id}"
   cidr_block = "172.16.0.0/21"
-  zone_id = "${data.alicloud_emr_instance_types.cloud_disk.types.0.zone_id}"
+  zone_id = "${data.ksyun_emr_instance_types.cloud_disk.types.0.zone_id}"
   vswitch_name = "${var.name}"
 }
 
-resource "alicloud_security_group" "default" {
+resource "ksyun_security_group" "default" {
     name = "${var.name}"
-    vpc_id = "${alicloud_vpc.default.id}"
+    vpc_id = "${ksyun_vpc.default.id}"
 }
 
-resource "alicloud_ram_role" "default" {
+resource "ksyun_ram_role" "default" {
 	name = "${var.name}"
 	document = <<EOF
     {
@@ -1221,13 +1221,13 @@ const SlbListenerCommonTestCase = `
 variable "ip_version" {
   default = "ipv4"
 }	
-resource "alicloud_slb_load_balancer" "default" {
+resource "ksyun_slb_load_balancer" "default" {
   load_balancer_name = "${var.name}"
   internet_charge_type = "PayByTraffic"
   address_type = "internet"
   load_balancer_spec = "slb.s1.small"
 }
-resource "alicloud_slb_acl" "default" {
+resource "ksyun_slb_acl" "default" {
   name = "${var.name}"
   ip_version = "${var.ip_version}"
   entry_list {
@@ -1241,74 +1241,74 @@ resource "alicloud_slb_acl" "default" {
 }
 `
 const SlbListenerVserverCommonTestCase = `
-data "alicloud_zones" "default" {
+data "ksyun_zones" "default" {
   available_disk_category = "cloud_efficiency"
   available_resource_creation= "VSwitch"
 }
 
-data "alicloud_instance_types" "default" {
-  availability_zone = "${data.alicloud_zones.default.zones.0.id}"
+data "ksyun_instance_types" "default" {
+  availability_zone = "${data.ksyun_zones.default.zones.0.id}"
 }
 
-data "alicloud_images" "default" {
+data "ksyun_images" "default" {
   name_regex = "^ubuntu"
   most_recent = true
   owners = "system"
 }
 
-resource "alicloud_vpc" "default" {
+resource "ksyun_vpc" "default" {
   vpc_name = "${var.name}"
   cidr_block = "172.16.0.0/16"
 }
 
-resource "alicloud_vswitch" "default" {
-  vpc_id = "${alicloud_vpc.default.id}"
+resource "ksyun_vswitch" "default" {
+  vpc_id = "${ksyun_vpc.default.id}"
   cidr_block = "172.16.0.0/16"
-  availability_zone = "${data.alicloud_zones.default.zones.0.id}"
+  availability_zone = "${data.ksyun_zones.default.zones.0.id}"
   name = "${var.name}"
 }
 
-resource "alicloud_security_group" "default" {
+resource "ksyun_security_group" "default" {
   name = "${var.name}"
-  vpc_id = "${alicloud_vpc.default.id}"
+  vpc_id = "${ksyun_vpc.default.id}"
 }
 
-resource "alicloud_instance" "default" {
-  image_id = "${data.alicloud_images.default.images.0.id}"
-  instance_type = "${data.alicloud_instance_types.default.instance_types.0.id}"
+resource "ksyun_instance" "default" {
+  image_id = "${data.ksyun_images.default.images.0.id}"
+  instance_type = "${data.ksyun_instance_types.default.instance_types.0.id}"
   instance_name = "${var.name}"
   count = "2"
-  security_groups = "${alicloud_security_group.default.*.id}"
+  security_groups = "${ksyun_security_group.default.*.id}"
   internet_charge_type = "PayByTraffic"
   internet_max_bandwidth_out = "10"
-  availability_zone = "${data.alicloud_zones.default.zones.0.id}"
+  availability_zone = "${data.ksyun_zones.default.zones.0.id}"
   instance_charge_type = "PostPaid"
   system_disk_category = "cloud_efficiency"
-  vswitch_id = "${alicloud_vswitch.default.id}"
+  vswitch_id = "${ksyun_vswitch.default.id}"
 }
 
-resource "alicloud_slb_load_balancer" "default" {
+resource "ksyun_slb_load_balancer" "default" {
   load_balancer_name = "${var.name}"
-  vswitch_id = "${alicloud_vswitch.default.id}"
+  vswitch_id = "${ksyun_vswitch.default.id}"
   load_balancer_spec = "slb.s1.small"
 }
 
-resource "alicloud_slb_server_group" "default" {
-  load_balancer_id = "${alicloud_slb_load_balancer.default.id}"
+resource "ksyun_slb_server_group" "default" {
+  load_balancer_id = "${ksyun_slb_load_balancer.default.id}"
   name = "${var.name}"
 }
 
-resource "alicloud_slb_master_slave_server_group" "default" {
-  load_balancer_id = "${alicloud_slb_load_balancer.default.id}"
+resource "ksyun_slb_master_slave_server_group" "default" {
+  load_balancer_id = "${ksyun_slb_load_balancer.default.id}"
   name = "${var.name}"
   servers {
-      server_id = "${alicloud_instance.default.0.id}"
+      server_id = "${ksyun_instance.default.0.id}"
       port = 80
       weight = 100
       server_type = "Master"
   }
   servers {
-      server_id = "${alicloud_instance.default.1.id}"
+      server_id = "${ksyun_instance.default.1.id}"
       port = 80
       weight = 100
       server_type = "Slave"

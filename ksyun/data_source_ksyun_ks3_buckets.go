@@ -263,7 +263,7 @@ func dataSourceAlicloudKs3BucketsRead(d *schema.ResourceData, meta interface{}) 
 			return ks3Client.ListBuckets(options...)
 		})
 		if err != nil {
-			return WrapErrorf(err, DataDefaultErrorMsg, "alicloud_ks3_bucket", "CreateBucket", KsyunKs3GoSdk)
+			return WrapErrorf(err, DataDefaultErrorMsg, "ksyun_ks3_bucket", "CreateBucket", KsyunKs3GoSdk)
 		}
 		if debugOn() {
 			addDebug("ListBuckets", raw, requestInfo, map[string]interface{}{"options": options})

@@ -46,7 +46,7 @@ func dataSourceKsyunKs3ServiceRead(d *schema.ResourceData, meta interface{}) err
 			d.Set("status", "Opened")
 			return nil
 		}
-		return WrapErrorf(err, DataDefaultErrorMsg, "alicloud_ks3_service", "OpenOssService", AlibabaCloudSdkGoERROR)
+		return WrapErrorf(err, DataDefaultErrorMsg, "ksyun_ks3_service", "OpenOssService", AlibabaCloudSdkGoERROR)
 	}
 
 	d.SetId(fmt.Sprintf("%v", response["OrderId"]))

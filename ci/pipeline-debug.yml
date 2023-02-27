@@ -1,0 +1,63 @@
+groups:
+  - name: All
+    jobs:
+      - Zones
+
+shared:
+  - &clone-provider
+    get: terraform-provider-ks3
+    resource: terraform-provider-ks3
+    trigger: false
+
+  - &get-terraform-qa
+    get: terraform-qa
+    resource: terraform-qa
+    trigger: true
+
+  - &get-ksyun-cli
+    get: ksyun-cli
+    resource: ksyun-cli
+
+  - &run
+    task: terraform ci
+    file: terraform-provider-ks3/ci/tasks/qa-test.yml
+    params: &run-params
+      TF_TASK_ACCESS_KEY: {{terraform_task_access_key}}
+      TF_TASK_SECRET_KEY: {{terraform_task_secret_key}}
+
+jobs:
+  - name: Zones
+    plan:
+    - in_parallel:
+      - get: terraform-provider-ks3
+        resource: terraform-provider-ks3
+      - aggregate:
+          - *get-terraform-qa
+          - *get-ksyun-cli
+      - <<: *run
+        params:
+          <<: *run-params
+          TEST_CASE_CODE: "Zones"
+
+resources:
+  - name: terraform-provider-ks3
+    type: git
+    source:
+      uri: https://github.com/aliyun/terraform-provider-ks3.git
+      branch: xiaozhu
+
+  - name: ksyun-cli
+    type: s3
+    source:
+      access_key_id: {{ksyun_cli_access_key}}
+      secret_access_key: {{ksyun_cli_secret_key}}
+      bucket: {{ksyun_cli_bucket}}
+      regexp: .*-cli-linux-3\.0\.(\d+)-amd64\.tgz
+      region_name: {{ksyun_cli_region}}
+      endpoint: oss-((ksyun_cli_region)).aliyuncs.com
+
+  - name: terraform-qa
+    type: git
+    source:
+      uri: https://github.com/xiaozhu36/terraform-qa.git
+      branch: main

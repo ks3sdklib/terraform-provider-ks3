@@ -34,15 +34,15 @@ var (
 	resourceName = flag.String("resource", "", "the name of the terraform resource to diff")
 	fileName     = flag.String("file_name", "", "the file to check diff")
 	filterList   = map[string][]string{
-		"alicloud_amqp_instance":            []string{"logistics"},
-		"alicloud_cms_alarm":                []string{"notify_type"},
-		"alicloud_cs_serverless_kubernetes": {"private_zone", "create_v2_cluster"},
-		"alicloud_slb_listener":             {"lb_protocol", "instance_port", "lb_port"},
-		"alicloud_kvstore_instance":         {"connection_string"},
-		"alicloud_instance":                 {"subnet_id"},
-		"alicloud_hbr_ots_backup_plan":      {"vault_id"},
-		"alicloud_nat_gateway":              {"vswitch_id"},
-		"alicloud_ecs_disk":                 {"advanced_features", "encrypt_algorithm", "dedicated_block_storage_cluster_id"},
+		"ksyun_amqp_instance":            []string{"logistics"},
+		"ksyun_cms_alarm":                []string{"notify_type"},
+		"ksyun_cs_serverless_kubernetes": {"private_zone", "create_v2_cluster"},
+		"ksyun_slb_listener":             {"lb_protocol", "instance_port", "lb_port"},
+		"ksyun_kvstore_instance":         {"connection_string"},
+		"ksyun_instance":                 {"subnet_id"},
+		"ksyun_hbr_ots_backup_plan":      {"vault_id"},
+		"ksyun_nat_gateway":              {"vswitch_id"},
+		"ksyun_ecs_disk":                 {"advanced_features", "encrypt_algorithm", "dedicated_block_storage_cluster_id"},
 	}
 )
 
@@ -216,7 +216,7 @@ func ParseField(hunk diffparser.DiffRange, length int) map[string]map[string]int
 }
 
 func parseResource(resourceName string) (*Resource, error) {
-	splitRes := strings.Split(resourceName, "alicloud_")
+	splitRes := strings.Split(resourceName, "ksyun_")
 	if len(splitRes) < 2 {
 		log.Errorf("the resource name parsed failed")
 		return nil, fmt.Errorf("the resource name parsed failed")
@@ -239,7 +239,7 @@ func parseResource(resourceName string) (*Resource, error) {
 
 	name := filepath.Base(filePath)
 	re := regexp.MustCompile("[a-z0-9A-Z_]*")
-	resourceName = "alicloud_" + re.FindString(name)
+	resourceName = "ksyun_" + re.FindString(name)
 	result := &Resource{Name: resourceName, Arguments: map[string]interface{}{}, Attributes: map[string]interface{}{}}
 	log.Infof("the resourceName = %s\n", resourceName)
 

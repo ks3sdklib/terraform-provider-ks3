@@ -9,7 +9,7 @@ import (
 
 func TestAccAlicloudOssBucketsDataSource_basic(t *testing.T) {
 	rand := acctest.RandIntRange(1000000, 9999999)
-	resourceId := "data.alicloud_ks3_buckets.default"
+	resourceId := "data.ksyun_ks3_buckets.default"
 
 	testAccConfig := dataSourceTestAccConfigFunc(resourceId,
 		fmt.Sprintf("tf-testacc-bucket-%d", rand),
@@ -17,10 +17,10 @@ func TestAccAlicloudOssBucketsDataSource_basic(t *testing.T) {
 
 	nameRegexConf := dataSourceTestAccConfig{
 		existConfig: testAccConfig(map[string]interface{}{
-			"name_regex": "${alicloud_ks3_bucket.default.bucket}",
+			"name_regex": "${ksyun_ks3_bucket.default.bucket}",
 		}),
 		fakeConfig: testAccConfig(map[string]interface{}{
-			"name_regex": "${alicloud_ks3_bucket.default.bucket}-fake",
+			"name_regex": "${ksyun_ks3_bucket.default.bucket}-fake",
 		}),
 	}
 	var existOssBucketsMapFunc = func(rand int) map[string]string {
@@ -107,7 +107,7 @@ func TestAccAlicloudOssBucketsDataSource_basic(t *testing.T) {
 
 func TestAccAlicloudOssBucketsDataSource_sserule(t *testing.T) {
 	rand := acctest.RandIntRange(1000000, 9999999)
-	resourceId := "data.alicloud_ks3_buckets.default"
+	resourceId := "data.ksyun_ks3_buckets.default"
 
 	testAccConfig := dataSourceTestAccConfigFunc(resourceId,
 		fmt.Sprintf("tf-testacc-bucket-%d", rand),
@@ -115,10 +115,10 @@ func TestAccAlicloudOssBucketsDataSource_sserule(t *testing.T) {
 
 	nameRegexConf := dataSourceTestAccConfig{
 		existConfig: testAccConfig(map[string]interface{}{
-			"name_regex": "${alicloud_ks3_bucket.default.bucket}",
+			"name_regex": "${ksyun_ks3_bucket.default.bucket}",
 		}),
 		fakeConfig: testAccConfig(map[string]interface{}{
-			"name_regex": "${alicloud_ks3_bucket.default.bucket}-fake",
+			"name_regex": "${ksyun_ks3_bucket.default.bucket}-fake",
 		}),
 	}
 	var existOssBucketsMapFunc = func(rand int) map[string]string {
@@ -159,7 +159,7 @@ func TestAccAlicloudOssBucketsDataSource_sserule(t *testing.T) {
 
 func TestAccAlicloudOssBucketsDataSource_sserule_with_kmsid(t *testing.T) {
 	rand := acctest.RandIntRange(1000000, 9999999)
-	resourceId := "data.alicloud_ks3_buckets.default"
+	resourceId := "data.ksyun_ks3_buckets.default"
 
 	testAccConfig := dataSourceTestAccConfigFunc(resourceId,
 		fmt.Sprintf("tf-testacc-bucket-%d", rand),
@@ -167,10 +167,10 @@ func TestAccAlicloudOssBucketsDataSource_sserule_with_kmsid(t *testing.T) {
 
 	nameRegexConf := dataSourceTestAccConfig{
 		existConfig: testAccConfig(map[string]interface{}{
-			"name_regex": "${alicloud_ks3_bucket.default.bucket}",
+			"name_regex": "${ksyun_ks3_bucket.default.bucket}",
 		}),
 		fakeConfig: testAccConfig(map[string]interface{}{
-			"name_regex": "${alicloud_ks3_bucket.default.bucket}-fake",
+			"name_regex": "${ksyun_ks3_bucket.default.bucket}-fake",
 		}),
 	}
 	var existOssBucketsMapFunc = func(rand int) map[string]string {
@@ -211,7 +211,7 @@ func TestAccAlicloudOssBucketsDataSource_sserule_with_kmsid(t *testing.T) {
 
 func TestAccAlicloudOssBucketsDataSource_versioning(t *testing.T) {
 	rand := acctest.RandIntRange(1000000, 9999999)
-	resourceId := "data.alicloud_ks3_buckets.default"
+	resourceId := "data.ksyun_ks3_buckets.default"
 
 	testAccConfig := dataSourceTestAccConfigFunc(resourceId,
 		fmt.Sprintf("tf-testacc-bucket-%d", rand),
@@ -219,10 +219,10 @@ func TestAccAlicloudOssBucketsDataSource_versioning(t *testing.T) {
 
 	nameRegexConf := dataSourceTestAccConfig{
 		existConfig: testAccConfig(map[string]interface{}{
-			"name_regex": "${alicloud_ks3_bucket.default.bucket}",
+			"name_regex": "${ksyun_ks3_bucket.default.bucket}",
 		}),
 		fakeConfig: testAccConfig(map[string]interface{}{
-			"name_regex": "${alicloud_ks3_bucket.default.bucket}-fake",
+			"name_regex": "${ksyun_ks3_bucket.default.bucket}-fake",
 		}),
 	}
 	var existOssBucketsMapFunc = func(rand int) map[string]string {
@@ -267,11 +267,11 @@ variable "name" {
 	default = "%s"
 }
 
-resource "alicloud_ks3_bucket" "target"{
+resource "ksyun_ks3_bucket" "target"{
 	bucket = "${var.name}-target"
 }
 
-resource "alicloud_ks3_bucket" "default" {
+resource "ksyun_ks3_bucket" "default" {
 	bucket = "${var.name}-default"
 	acl = "public-read"
 
@@ -294,7 +294,7 @@ resource "alicloud_ks3_bucket" "default" {
 	}
 
 	logging {
-		target_bucket = "${alicloud_ks3_bucket.target.id}"
+		target_bucket = "${ksyun_ks3_bucket.target.id}"
 		target_prefix = "log/"
 	}
 
@@ -334,7 +334,7 @@ variable "name" {
 	default = "%s"
 }
 
-resource "alicloud_ks3_bucket" "default" {
+resource "ksyun_ks3_bucket" "default" {
 	bucket = "${var.name}-default"
 	acl = "public-read"
 
@@ -351,7 +351,7 @@ variable "name" {
 	default = "%s"
 }
 
-resource "alicloud_ks3_bucket" "default" {
+resource "ksyun_ks3_bucket" "default" {
 	bucket = "${var.name}-default"
 	acl = "public-read"
 
@@ -369,7 +369,7 @@ variable "name" {
 	default = "%s"
 }
 
-resource "alicloud_ks3_bucket" "default" {
+resource "ksyun_ks3_bucket" "default" {
 	bucket = "${var.name}-default"
 	acl = "public-read"
 
