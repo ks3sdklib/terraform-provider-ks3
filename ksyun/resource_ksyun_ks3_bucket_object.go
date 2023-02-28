@@ -172,7 +172,7 @@ func resourceKsyunKs3BucketObjectPut(d *schema.ResourceData, meta interface{}) e
 	}
 
 	if err != nil {
-		return WrapError(Error("Error putting object in Oss bucket (%#v): %s", bucket, err))
+		return WrapError(Error("Error putting object in Ks3 bucket (%#v): %s", bucket, err))
 	}
 
 	d.SetId(key)
@@ -243,7 +243,7 @@ func resourceKsyunKs3BucketObjectDelete(d *schema.ResourceData, meta interface{}
 		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "DeleteObject", KsyunKs3GoSdk)
 	}
 
-	return WrapError(ks3Service.WaitForOssBucketObject(bucket, d.Id(), Deleted, DefaultTimeoutMedium))
+	return WrapError(ks3Service.WaitForKs3BucketObject(bucket, d.Id(), Deleted, DefaultTimeoutMedium))
 
 }
 

@@ -43,8 +43,8 @@ const (
 	RusWest1 = Region("rus-west-1")
 
 	HangzhouFinance     = Region("cn-hangzhou-finance")
-	HangzhouFinanceOSS  = Region("cn-hzfinance")
-	HangzhouFinanceOSS1 = Region("cn-hzjbp")
+	HangzhouFinanceKS3  = Region("cn-hzfinance")
+	HangzhouFinanceKS31 = Region("cn-hzjbp")
 
 	BeijingFinance1   = Region("cn-beijing-finance-1")
 	BeijingFinancePub = Region("cn-beijing-finance-1-pub")
@@ -68,7 +68,7 @@ var ValidRegions = []Region{
 	CnNorth2Gov1,
 	ShenZhenFinance1, ShenzhenFinance2, ShenzhenFinance,
 	ShanghaiFinance1Pub, ShanghaiFinance,
-	HangzhouFinance, HangzhouFinanceOSS, HangzhouFinanceOSS1,
+	HangzhouFinance, HangzhouFinanceKS3, HangzhouFinanceKS31,
 	BeijingFinance1, BeijingFinancePub,
 }
 
@@ -117,8 +117,8 @@ var DdosbgpSupportedRegions = []Region{Hangzhou, Beijing, Shenzhen, Qingdao, Sha
 var EssScalingConfigurationMultiSgSupportedRegions = []Region{APSouthEast1, APSouth1}
 var SlbClassicNoSupportedRegions = []Region{APNorthEast1, APSouthEast2, APSouthEast3, APSouthEast5, APSouth1, USEast1, MEEast1, EUCentral1, EUWest1, Huhehaote, Zhangjiakou}
 var NasNoSupportedRegions = []Region{Qingdao, APSouth1, APSouthEast3, APSouthEast5}
-var OssVersioningSupportedRegions = []Region{APSouth1}
-var OssSseSupportedRegions = []Region{Qingdao, Hangzhou, Beijing, Shanghai, Shenzhen, Hongkong, APNorthEast1, APSouth1, USEast1}
+var Ks3VersioningSupportedRegions = []Region{APSouth1}
+var Ks3SseSupportedRegions = []Region{Qingdao, Hangzhou, Beijing, Shanghai, Shenzhen, Hongkong, APNorthEast1, APSouth1, USEast1}
 var GpdbClassicNoSupportedRegions = []Region{APSouthEast2, APSouthEast3, APSouthEast5, APSouth1, USEast1, USWest1, APNorthEast1, EUCentral1}
 var OnsNoSupportRegions = []Region{APSouthEast5}
 var SmartagSupportedRegions = []Region{Shanghai, ShanghaiFinance, Hongkong, APSouthEast1, APSouthEast2, APSouthEast3, APSouthEast5, EUCentral1, APNorthEast1}
@@ -175,7 +175,7 @@ var VpcIpv6GatewaySupportRegions = []Region{Qingdao, Beijing, Zhangjiakou, Huheh
 var CmsDynamicTagGroupSupportRegions = []Region{Shanghai}
 var OOSApplicationSupportRegions = []Region{Hangzhou}
 var DTSSupportRegions = []Region{Hangzhou, APSouth1, ShenZhenFinance1, CnNorth2Gov1, Qingdao, ShanghaiFinance, USWest1, APNorthEast1, Beijing, Hongkong, APSouthEast1, APSouthEast3, EUCentral1, APSouthEast5, Shenzhen, APSouthEast2, Huhehaote, USEast1, Zhangjiakou, EUWest1, MEEast1, Shanghai}
-var OOSSupportRegions = []Region{APSouthEast5, USWest1, EUWest1, Qingdao, ChengDu, Shanghai, Huhehaote, Shenzhen, APNorthEast1, APSouthEast1, EUCentral1, Hangzhou, Beijing, APSouth1, APSouthEast3, USEast1, Zhangjiakou, Hongkong, APSouthEast2}
+var OKS3upportRegions = []Region{APSouthEast5, USWest1, EUWest1, Qingdao, ChengDu, Shanghai, Huhehaote, Shenzhen, APNorthEast1, APSouthEast1, EUCentral1, Hangzhou, Beijing, APSouth1, APSouthEast3, USEast1, Zhangjiakou, Hongkong, APSouthEast2}
 var MongoDBSupportRegions = []Region{APSouth1, Shanghai, APSouthEast2, WuLanChaBu, CnNorth2Gov1, Hangzhou, Beijing, Qingdao, Zhangjiakou, USWest1, GuangZhou, APSouthEast6, EUWest1, ChengDu, APSouthEast1, APSouthEast3, APSouthEast5, ShanghaiFinance, Hongkong, HeYuan, Huhehaote, USEast1, EUCentral1, APNorthEast1, Shenzhen, ShenZhenFinance1, MEEast1}
 var MongoDBServerlessSupportRegions = []Region{APSouthEast5, Shanghai, USEast1, Hongkong, HeYuan, Zhangjiakou, APSouthEast6, GuangZhou, Huhehaote, Beijing, Shenzhen, WuLanChaBu, ChengDu, Hangzhou, Qingdao, USWest1, APSouthEast1}
 var FnFSupportRegions = []Region{Shenzhen, Beijing, Shanghai, APSouthEast1, USWest1, Hangzhou}
@@ -183,7 +183,7 @@ var GaSupportRegions = []Region{Hangzhou}
 var AlidnsSupportRegions = []Region{Hangzhou, APSouthEast1}
 var VPCVbrHaSupportRegions = []Region{Hangzhou}
 var CenSupportRegions = []Region{Hangzhou}
-var ROSSupportRegions = []Region{USWest1, HeYuan, Zhangjiakou, Hongkong, APSouthEast3, EUCentral1, Huhehaote, APSouthEast6, Shenzhen, APSouth1, Qingdao, GuangZhou, APSouthEast2, WuLanChaBu, EUWest1, MEEast1, ChengDu, Shanghai, APSouthEast1, APSouthEast5, USEast1, Beijing, APNorthEast1, Hangzhou}
+var RKS3upportRegions = []Region{USWest1, HeYuan, Zhangjiakou, Hongkong, APSouthEast3, EUCentral1, Huhehaote, APSouthEast6, Shenzhen, APSouth1, Qingdao, GuangZhou, APSouthEast2, WuLanChaBu, EUWest1, MEEast1, ChengDu, Shanghai, APSouthEast1, APSouthEast5, USEast1, Beijing, APNorthEast1, Hangzhou}
 var VPCBgpGroupSupportRegions = []Region{Hangzhou}
 var NASSupportRegions = []Region{HeYuan, Huhehaote, APSouthEast5, WuLanChaBu, CnNorth2Gov1, Qingdao, ChengDu, Hangzhou, APSouth1, ShenZhenFinance1, EUCentral1, Shenzhen, APSouthEast2, Beijing, Shanghai, ShanghaiFinance, APSouthEast1, APSouthEast6, APNorthEast1, APSouthEast3, GuangZhou, USEast1, EUWest1, Hongkong, Zhangjiakou, USWest1}
 var HBRSupportRegions = []Region{Beijing, ChengDu, Huhehaote, Qingdao, Shanghai, Shenzhen, Zhangjiakou, Hangzhou}

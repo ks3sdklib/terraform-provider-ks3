@@ -16,10 +16,10 @@ import (
 
 func resourceKsyunKs3Bucket() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceAlicloudOssBucketCreate,
-		Read:   resourceAlicloudOssBucketRead,
-		Update: resourceAlicloudOssBucketUpdate,
-		Delete: resourceAlicloudOssBucketDelete,
+		Create: resourceKsyunKs3BucketCreate,
+		Read:   resourceKsyunKs3BucketRead,
+		Update: resourceKsyunKs3BucketUpdate,
+		Delete: resourceKsyunKs3BucketDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
@@ -166,12 +166,12 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 									"date": {
 										Type:         schema.TypeString,
 										Optional:     true,
-										ValidateFunc: validateOssBucketDateTimestamp,
+										ValidateFunc: validateKs3BucketDateTimestamp,
 									},
 									"created_before_date": {
 										Type:         schema.TypeString,
 										Optional:     true,
-										ValidateFunc: validateOssBucketDateTimestamp,
+										ValidateFunc: validateKs3BucketDateTimestamp,
 									},
 									"days": {
 										Type:     schema.TypeInt,
@@ -193,7 +193,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 									"created_before_date": {
 										Type:         schema.TypeString,
 										Optional:     true,
-										ValidateFunc: validateOssBucketDateTimestamp,
+										ValidateFunc: validateKs3BucketDateTimestamp,
 									},
 									"days": {
 										Type:     schema.TypeInt,
@@ -221,7 +221,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 									"created_before_date": {
 										Type:         schema.TypeString,
 										Optional:     true,
-										ValidateFunc: validateOssBucketDateTimestamp,
+										ValidateFunc: validateKs3BucketDateTimestamp,
 									},
 									"days": {
 										Type:     schema.TypeInt,
@@ -370,7 +370,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 	}
 }
 
-func resourceAlicloudOssBucketCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceKsyunKs3BucketCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*connectivity.KsyunClient)
 	request := map[string]string{"bucketName": d.Get("bucket").(string)}
 	var requestInfo *ks3.Client
@@ -384,7 +384,7 @@ func resourceAlicloudOssBucketCreate(d *schema.ResourceData, meta interface{}) e
 	addDebug("IsBucketExist", raw, requestInfo, request)
 	isExist, _ := raw.(bool)
 	if isExist {
-		return WrapError(Error("[ERROR] The specified bucket name: %#v is not available. The bucket namespace is shared by all users of the OSS system. Please select a different name and try again.", request["bucketName"]))
+		return WrapError(Error("[ERROR] The specified bucket name: %#v is not available. The bucket namespace is shared by all users of the KS3 system. Please select a different name and try again.", request["bucketName"]))
 	}
 	type Request struct {
 		BucketName         string
@@ -414,7 +414,7 @@ func resourceAlicloudOssBucketCreate(d *schema.ResourceData, meta interface{}) e
 		}
 		isExist, _ := raw.(bool)
 		if !isExist {
-			return resource.RetryableError(Error("Trying to ensure new OSS bucket %#v has been created successfully.", request["bucketName"]))
+			return resource.RetryableError(Error("Trying to ensure new KS3 bucket %#v has been created successfully.", request["bucketName"]))
 		}
 		addDebug("IsBucketExist", raw, requestInfo, request)
 		return nil
@@ -427,13 +427,13 @@ func resourceAlicloudOssBucketCreate(d *schema.ResourceData, meta interface{}) e
 	// Assign the bucket name as the resource ID
 	d.SetId(request["bucketName"])
 
-	return resourceAlicloudOssBucketUpdate(d, meta)
+	return resourceKsyunKs3BucketUpdate(d, meta)
 }
 
-func resourceAlicloudOssBucketRead(d *schema.ResourceData, meta interface{}) error {
+func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*connectivity.KsyunClient)
 	ks3Service := Ks3Service{client}
-	object, err := ks3Service.DescribeOssBucket(d.Id())
+	object, err := ks3Service.DescribeKs3Bucket(d.Id())
 	if err != nil {
 		if NotFoundError(err) {
 			d.SetId("")
@@ -744,7 +744,7 @@ func resourceAlicloudOssBucketRead(d *schema.ResourceData, meta interface{}) err
 	return nil
 }
 
-func resourceAlicloudOssBucketUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceKsyunKs3BucketUpdate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*connectivity.KsyunClient)
 
 	d.Partial(true)
@@ -764,80 +764,80 @@ func resourceAlicloudOssBucketUpdate(d *schema.ResourceData, meta interface{}) e
 	}
 
 	if d.HasChange("cors_rule") {
-		if err := resourceAlicloudOssBucketCorsUpdate(client, d); err != nil {
+		if err := resourceKsyunKs3BucketCorsUpdate(client, d); err != nil {
 			return WrapError(err)
 		}
 		d.SetPartial("cors_rule")
 	}
 
 	if d.HasChange("website") {
-		if err := resourceAlicloudOssBucketWebsiteUpdate(client, d); err != nil {
+		if err := resourceKsyunKs3BucketWebsiteUpdate(client, d); err != nil {
 			return WrapError(err)
 		}
 		d.SetPartial("website")
 	}
 
 	if d.HasChange("logging") {
-		if err := resourceAlicloudOssBucketLoggingUpdate(client, d); err != nil {
+		if err := resourceKsyunKs3BucketLoggingUpdate(client, d); err != nil {
 			return WrapError(err)
 		}
 		d.SetPartial("logging")
 	}
 
 	if d.HasChange("referer_config") {
-		if err := resourceAlicloudOssBucketRefererUpdate(client, d); err != nil {
+		if err := resourceKsyunKs3BucketRefererUpdate(client, d); err != nil {
 			return WrapError(err)
 		}
 		d.SetPartial("referer_config")
 	}
 
 	if d.HasChange("lifecycle_rule") {
-		if err := resourceAlicloudOssBucketLifecycleRuleUpdate(client, d); err != nil {
+		if err := resourceKsyunKs3BucketLifecycleRuleUpdate(client, d); err != nil {
 			return WrapError(err)
 		}
 		d.SetPartial("lifecycle_rule")
 	}
 
 	if d.HasChange("policy") {
-		if err := resourceAlicloudOssBucketPolicyUpdate(client, d); err != nil {
+		if err := resourceKsyunKs3BucketPolicyUpdate(client, d); err != nil {
 			return WrapError(err)
 		}
 		d.SetPartial("policy")
 	}
 
 	if d.HasChange("server_side_encryption_rule") {
-		if err := resourceAlicloudOssBucketEncryptionUpdate(client, d); err != nil {
+		if err := resourceKsyunKs3BucketEncryptionUpdate(client, d); err != nil {
 			return WrapError(err)
 		}
 		d.SetPartial("server_side_encryption_rule")
 	}
 
 	if d.HasChange("tags") {
-		if err := resourceAlicloudOssBucketTaggingUpdate(client, d); err != nil {
+		if err := resourceKsyunKs3BucketTaggingUpdate(client, d); err != nil {
 			return WrapError(err)
 		}
 		d.SetPartial("tags")
 	}
 
 	if d.HasChange("versioning") {
-		if err := resourceAlicloudOssBucketVersioningUpdate(client, d); err != nil {
+		if err := resourceKsyunKs3BucketVersioningUpdate(client, d); err != nil {
 			return WrapError(err)
 		}
 		d.SetPartial("versioning")
 	}
 
 	if d.HasChange("transfer_acceleration") {
-		if err := resourceAlicloudOssBucketTransferAccUpdate(client, d); err != nil {
+		if err := resourceKsyunKs3BucketTransferAccUpdate(client, d); err != nil {
 			return WrapError(err)
 		}
 		d.SetPartial("transfer_acceleration")
 	}
 
 	d.Partial(false)
-	return resourceAlicloudOssBucketRead(d, meta)
+	return resourceKsyunKs3BucketRead(d, meta)
 }
 
-func resourceAlicloudOssBucketCorsUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
+func resourceKsyunKs3BucketCorsUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
 	cors := d.Get("cors_rule").([]interface{})
 	var requestInfo *ks3.Client
 	if cors == nil || len(cors) == 0 {
@@ -863,7 +863,7 @@ func resourceAlicloudOssBucketCorsUpdate(client *connectivity.KsyunClient, d *sc
 		corsMap := c.(map[string]interface{})
 		rule := ks3.CORSRule{}
 		for k, v := range corsMap {
-			log.Printf("[DEBUG] OSS bucket: %s, put CORS: %#v, %#v", d.Id(), k, v)
+			log.Printf("[DEBUG] KS3 bucket: %s, put CORS: %#v, %#v", d.Id(), k, v)
 			if k == "max_age_seconds" {
 				rule.MaxAgeSeconds = v.(int)
 			} else {
@@ -886,7 +886,7 @@ func resourceAlicloudOssBucketCorsUpdate(client *connectivity.KsyunClient, d *sc
 		rules = append(rules, rule)
 	}
 
-	log.Printf("[DEBUG] Oss bucket: %s, put CORS: %#v", d.Id(), cors)
+	log.Printf("[DEBUG] Ks3 bucket: %s, put CORS: %#v", d.Id(), cors)
 	raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
 		requestInfo = ks3Client
 		return nil, ks3Client.SetBucketCORS(d.Id(), rules)
@@ -900,7 +900,7 @@ func resourceAlicloudOssBucketCorsUpdate(client *connectivity.KsyunClient, d *sc
 	})
 	return nil
 }
-func resourceAlicloudOssBucketWebsiteUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
+func resourceKsyunKs3BucketWebsiteUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
 	ws := d.Get("website").([]interface{})
 	var requestInfo *ks3.Client
 	if ws == nil || len(ws) == 0 {
@@ -939,7 +939,7 @@ func resourceAlicloudOssBucketWebsiteUpdate(client *connectivity.KsyunClient, d 
 	return nil
 }
 
-func resourceAlicloudOssBucketLoggingUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
+func resourceKsyunKs3BucketLoggingUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
 	logging := d.Get("logging").([]interface{})
 	var requestInfo *ks3.Client
 	if logging == nil || len(logging) == 0 {
@@ -978,11 +978,11 @@ func resourceAlicloudOssBucketLoggingUpdate(client *connectivity.KsyunClient, d 
 	return nil
 }
 
-func resourceAlicloudOssBucketRefererUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
+func resourceKsyunKs3BucketRefererUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
 	config := d.Get("referer_config").([]interface{})
 	var requestInfo *ks3.Client
 	if config == nil || len(config) < 1 {
-		log.Printf("[DEBUG] OSS set bucket referer as nil")
+		log.Printf("[DEBUG] KS3 set bucket referer as nil")
 		raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
 			requestInfo = ks3Client
 			return nil, ks3Client.SetBucketReferer(d.Id(), nil, true)
@@ -1024,7 +1024,7 @@ func resourceAlicloudOssBucketRefererUpdate(client *connectivity.KsyunClient, d 
 	return nil
 }
 
-func resourceAlicloudOssBucketLifecycleRuleUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
+func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
 	bucket := d.Id()
 	lifecycleRules := d.Get("lifecycle_rule").([]interface{})
 	var requestInfo *ks3.Client
@@ -1192,7 +1192,7 @@ func resourceAlicloudOssBucketLifecycleRuleUpdate(client *connectivity.KsyunClie
 	return nil
 }
 
-func resourceAlicloudOssBucketPolicyUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
+func resourceKsyunKs3BucketPolicyUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
 	bucket := d.Id()
 	policy := d.Get("policy").(string)
 	var requestInfo *ks3.Client
@@ -1224,7 +1224,7 @@ func resourceAlicloudOssBucketPolicyUpdate(client *connectivity.KsyunClient, d *
 	return nil
 }
 
-func resourceAlicloudOssBucketEncryptionUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
+func resourceKsyunKs3BucketEncryptionUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
 	encryption_rule := d.Get("server_side_encryption_rule").([]interface{})
 	var requestInfo *ks3.Client
 	if encryption_rule == nil || len(encryption_rule) == 0 {
@@ -1263,7 +1263,7 @@ func resourceAlicloudOssBucketEncryptionUpdate(client *connectivity.KsyunClient,
 	return nil
 }
 
-func resourceAlicloudOssBucketTaggingUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
+func resourceKsyunKs3BucketTaggingUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
 	tagsMap := d.Get("tags").(map[string]interface{})
 	var requestInfo *ks3.Client
 	if tagsMap == nil || len(tagsMap) == 0 {
@@ -1300,7 +1300,7 @@ func resourceAlicloudOssBucketTaggingUpdate(client *connectivity.KsyunClient, d 
 	return nil
 }
 
-func resourceAlicloudOssBucketVersioningUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
+func resourceKsyunKs3BucketVersioningUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
 	versioning := d.Get("versioning").([]interface{})
 	if len(versioning) == 1 {
 		var status string
@@ -1329,7 +1329,7 @@ func resourceAlicloudOssBucketVersioningUpdate(client *connectivity.KsyunClient,
 	return nil
 }
 
-func resourceAlicloudOssBucketTransferAccUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
+func resourceKsyunKs3BucketTransferAccUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
 	acc := d.Get("transfer_acceleration").([]interface{})
 	if len(acc) == 1 {
 		var requestInfo *ks3.Client
@@ -1355,7 +1355,7 @@ func resourceAlicloudOssBucketTransferAccUpdate(client *connectivity.KsyunClient
 	return nil
 }
 
-func resourceAlicloudOssBucketDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceKsyunKs3BucketDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*connectivity.KsyunClient)
 	ks3Service := Ks3Service{client}
 	var requestInfo *ks3.Client
@@ -1418,7 +1418,7 @@ func resourceAlicloudOssBucketDelete(d *schema.ResourceData, meta interface{}) e
 	if err != nil {
 		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "DeleteBucket", KsyunKs3GoSdk)
 	}
-	return WrapError(ks3Service.WaitForOssBucket(d.Id(), Deleted, DefaultTimeoutMedium))
+	return WrapError(ks3Service.WaitForKs3Bucket(d.Id(), Deleted, DefaultTimeoutMedium))
 }
 
 func expirationHash(v interface{}) int {

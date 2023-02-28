@@ -12,7 +12,7 @@ type Ks3Service struct {
 	client *connectivity.KsyunClient
 }
 
-func (s *Ks3Service) DescribeOssBucket(id string) (response ks3.GetBucketInfoResult, err error) {
+func (s *Ks3Service) DescribeKs3Bucket(id string) (response ks3.GetBucketInfoResult, err error) {
 	request := map[string]string{"bucketName": id}
 	var requestInfo *ks3.Client
 	raw, err := s.client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
@@ -31,10 +31,10 @@ func (s *Ks3Service) DescribeOssBucket(id string) (response ks3.GetBucketInfoRes
 	return
 }
 
-func (s *Ks3Service) WaitForOssBucket(id string, status Status, timeout int) error {
+func (s *Ks3Service) WaitForKs3Bucket(id string, status Status, timeout int) error {
 	deadline := time.Now().Add(time.Duration(timeout) * time.Second)
 	for {
-		object, err := s.DescribeOssBucket(id)
+		object, err := s.DescribeKs3Bucket(id)
 		if err != nil {
 			if NotFoundError(err) {
 				if status == Deleted {
@@ -57,7 +57,7 @@ func (s *Ks3Service) WaitForOssBucket(id string, status Status, timeout int) err
 	}
 }
 
-func (s *Ks3Service) WaitForOssBucketObject(bucket *ks3.Bucket, id string, status Status, timeout int) error {
+func (s *Ks3Service) WaitForKs3BucketObject(bucket *ks3.Bucket, id string, status Status, timeout int) error {
 	deadline := time.Now().Add(time.Duration(timeout) * time.Second)
 	for {
 		exist, err := bucket.IsObjectExist(id)
@@ -76,7 +76,7 @@ func (s *Ks3Service) WaitForOssBucketObject(bucket *ks3.Bucket, id string, statu
 	}
 }
 
-func (s *Ks3Service) DescribeOssBucketReplication(id string) (response string, err error) {
+func (s *Ks3Service) DescribeKs3BucketReplication(id string) (response string, err error) {
 	parts, err := ParseResourceId(id, 2)
 	if err != nil {
 		return response, WrapError(err)

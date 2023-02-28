@@ -47,6 +47,6 @@ variable "allow-empty" {
 }
 
 variable "referers" {
-  default = "http://www.aliyun.com, https://www.aliyun.com, http://?.aliyun.com"
+  default = "http://www.ksyun.com, https://www.ksyun.com, http://?.ksyun.com"
 }
 

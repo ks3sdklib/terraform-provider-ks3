@@ -34,7 +34,7 @@ func TestAccKsyunKs3BucketObject_basic(t *testing.T) {
 	testAccCheck := ra.resourceAttrMapUpdateSet()
 	rand := acctest.RandIntRange(1000000, 9999999)
 	name := fmt.Sprintf("tf-testacc-object-%d", rand)
-	testAccConfig := resourceTestAccConfigFunc(resourceId, name, resourceOssBucketObjectConfigDependence)
+	testAccConfig := resourceTestAccConfigFunc(resourceId, name, resourceKs3BucketObjectConfigDependence)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
@@ -121,7 +121,7 @@ func TestAccKsyunKs3BucketObject_basic(t *testing.T) {
 	})
 }
 
-func resourceOssBucketObjectConfigDependence(name string) string {
+func resourceKs3BucketObjectConfigDependence(name string) string {
 
 	return fmt.Sprintf(`
 resource "ksyun_ks3_bucket" "default" {
@@ -143,9 +143,9 @@ var ks3BucketObjectBasicMap = map[string]string{
 
 func testAccCheckKsyunKs3BucketObjectExists(n string, bucket string, obj http.Header) resource.TestCheckFunc {
 	providers := []*schema.Provider{testAccProvider}
-	return testAccCheckOssBucketObjectExistsWithProviders(n, bucket, obj, &providers)
+	return testAccCheckKs3BucketObjectExistsWithProviders(n, bucket, obj, &providers)
 }
-func testAccCheckOssBucketObjectExistsWithProviders(n string, bucket string, obj http.Header, providers *[]*schema.Provider) resource.TestCheckFunc {
+func testAccCheckKs3BucketObjectExistsWithProviders(n string, bucket string, obj http.Header, providers *[]*schema.Provider) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -186,10 +186,10 @@ func testAccCheckOssBucketObjectExistsWithProviders(n string, bucket string, obj
 	}
 }
 func testAccCheckKsyunKs3BucketObjectDestroy(s *terraform.State) error {
-	return testAccCheckOssBucketObjectDestroyWithProvider(s, testAccProvider)
+	return testAccCheckKs3BucketObjectDestroyWithProvider(s, testAccProvider)
 }
 
-func testAccCheckOssBucketObjectDestroyWithProvider(s *terraform.State, provider *schema.Provider) error {
+func testAccCheckKs3BucketObjectDestroyWithProvider(s *terraform.State, provider *schema.Provider) error {
 	client := provider.Meta().(*connectivity.KsyunClient)
 	var bucket *ks3.Bucket
 	for _, rs := range s.RootModule().Resources {

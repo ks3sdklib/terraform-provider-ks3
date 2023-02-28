@@ -14,9 +14,9 @@ import (
 
 func resourceKsyunKs3BucketReplication() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceAlicloudOssBucketReplicationCreate,
-		Read:   resourceAlicloudOssBucketReplicationRead,
-		Delete: resourceAlicloudOssBucketReplicationDelete,
+		Create: resourceKsyunKs3BucketReplicationCreate,
+		Read:   resourceKsyunKs3BucketReplicationRead,
+		Delete: resourceKsyunKs3BucketReplicationDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
@@ -482,7 +482,7 @@ func hasProgressBlock(d *schema.ResourceData) bool {
 	return true
 }
 
-func resourceAlicloudOssBucketReplicationCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceKsyunKs3BucketReplicationCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*connectivity.KsyunClient)
 	bucket := d.Get("bucket").(string)
 
@@ -517,17 +517,17 @@ func resourceAlicloudOssBucketReplicationCreate(d *schema.ResourceData, meta int
 		"ReplicationAlreadyExist":  replicationAlreadyExist,
 	})
 
-	//OSS server does not return rule-id and only supports one rule currently, obtains rule id through GetBucketReplication
+	//KS3 server does not return rule-id and only supports one rule currently, obtains rule id through GetBucketReplication
 	rc, err = retrieveReplicationRules(client, bucket)
 	if err != nil {
 		return WrapErrorf(err, DefaultErrorMsg, bucket, "retrieveReplicationRules", KsyunKs3GoSdk)
 	}
 
 	d.SetId(fmt.Sprintf("%s%s%s", bucket, COLON_SEPARATED, rc.Rules[0].ID))
-	return resourceAlicloudOssBucketReplicationRead(d, meta)
+	return resourceKsyunKs3BucketReplicationRead(d, meta)
 }
 
-func resourceAlicloudOssBucketReplicationRead(d *schema.ResourceData, meta interface{}) error {
+func resourceKsyunKs3BucketReplicationRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*connectivity.KsyunClient)
 	parts, err := ParseResourceId(d.Id(), 2)
 	if err != nil {
@@ -540,7 +540,7 @@ func resourceAlicloudOssBucketReplicationRead(d *schema.ResourceData, meta inter
 	rc, err := retrieveReplicationRules(client, bucket)
 
 	if IsExpectedErrors(err, []string{"NoSuchReplicationConfiguration", "NoSuchBucket"}) {
-		log.Printf("[WARN] OSS Bucket Replication Configuration (%s) not found, removing from state", bucket)
+		log.Printf("[WARN] KS3 Bucket Replication Configuration (%s) not found, removing from state", bucket)
 		d.SetId("")
 		return nil
 	}
@@ -566,7 +566,7 @@ func resourceAlicloudOssBucketReplicationRead(d *schema.ResourceData, meta inter
 	return nil
 }
 
-func resourceAlicloudOssBucketReplicationDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceKsyunKs3BucketReplicationDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*connectivity.KsyunClient)
 	parts, err := ParseResourceId(d.Id(), 2)
 	if err != nil {

@@ -879,8 +879,8 @@ resource "ksyun_ram_role" "default" {
             "Effect": "Allow",
             "Principal": {
             "Service": [
-                "emr.aliyuncs.com",
-                "ecs.aliyuncs.com"
+                "emr.ksyuncs.com",
+                "ecs.ksyuncs.com"
             ]
             }
         }
@@ -989,8 +989,8 @@ resource "ksyun_ram_role" "default" {
             "Effect": "Allow",
             "Principal": {
             "Service": [
-                "emr.aliyuncs.com",
-                "ecs.aliyuncs.com"
+                "emr.ksyuncs.com",
+                "ecs.ksyuncs.com"
             ]
             }
         }
@@ -1083,8 +1083,8 @@ resource "ksyun_ram_role" "default" {
             "Effect": "Allow",
             "Principal": {
             "Service": [
-                "emr.aliyuncs.com", 
-                "ecs.aliyuncs.com"
+                "emr.ksyuncs.com", 
+                "ecs.ksyuncs.com"
             ]
             }
         }
@@ -1203,8 +1203,8 @@ resource "ksyun_ram_role" "default" {
             "Effect": "Allow",
             "Principal": {
             "Service": [
-                "emr.aliyuncs.com", 
-                "ecs.aliyuncs.com"
+                "emr.ksyuncs.com", 
+                "ecs.ksyuncs.com"
             ]
             }
         }

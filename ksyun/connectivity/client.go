@@ -24,7 +24,7 @@ type KsyunClient struct {
 	RegionId        string
 	SourceIp        string
 	SecureTransport string
-	//In order to build ots table client, add accesskey and secretkey in aliyunclient temporarily.
+	//In order to build ots table client, add accesskey and secretkey in ksyunclient temporarily.
 	AccessKey       string
 	SecretKey       string
 	SecurityToken   string
@@ -40,18 +40,10 @@ type KsyunClient struct {
 type ApiVersion string
 
 const (
-	ApiVersion20140526 = ApiVersion("2014-05-26")
-	ApiVersion20160815 = ApiVersion("2016-08-15")
 	ApiVersion20140515 = ApiVersion("2014-05-15")
 )
 
-const businessInfoKey = "Terraform"
-
 const DefaultClientRetryCountSmall = 5
-
-const DefaultClientRetryCountMedium = 10
-
-const DefaultClientRetryCountLarge = 15
 
 const Terraform = "HashiCorp-Terraform"
 
@@ -66,31 +58,6 @@ var loadSdkEndpointMutex = sync.Mutex{}
 // The main version number that is being run at the moment.
 var providerVersion = "1.198.0"
 var terraformVersion = strings.TrimSuffix(schema.Provider{}.TerraformVersion, "-dev")
-
-// Temporarily maintain map for old ecs client methods and store special endpoint information
-var EndpointMap = map[string]string{
-	"cn-shenzhen-su18-b01":        "ecs.aliyuncs.com",
-	"cn-beijing":                  "ecs.aliyuncs.com",
-	"cn-shenzhen-st4-d01":         "ecs.aliyuncs.com",
-	"cn-haidian-cm12-c01":         "ecs.aliyuncs.com",
-	"cn-hangzhou-internal-prod-1": "ecs.aliyuncs.com",
-	"cn-qingdao":                  "ecs.aliyuncs.com",
-	"cn-shanghai":                 "ecs.aliyuncs.com",
-	"cn-shanghai-finance-1":       "ecs.aliyuncs.com",
-	"cn-hongkong":                 "ecs.aliyuncs.com",
-	"us-west-1":                   "ecs.aliyuncs.com",
-	"cn-shenzhen":                 "ecs.aliyuncs.com",
-	"cn-shanghai-et15-b01":        "ecs.aliyuncs.com",
-	"cn-hangzhou-bj-b01":          "ecs.aliyuncs.com",
-	"cn-zhangbei-na61-b01":        "ecs.aliyuncs.com",
-	"cn-shenzhen-finance-1":       "ecs.aliyuncs.com",
-	"cn-shanghai-et2-b01":         "ecs.aliyuncs.com",
-	"ap-southeast-1":              "ecs.aliyuncs.com",
-	"cn-beijing-nu16-b01":         "ecs.aliyuncs.com",
-	"us-east-1":                   "ecs.aliyuncs.com",
-	"cn-fujian":                   "ecs.aliyuncs.com",
-	"cn-hangzhou":                 "ecs.aliyuncs.com",
-}
 
 // Client for KsyunClient
 func (c *Config) Client() (*KsyunClient, error) {
@@ -163,21 +130,21 @@ func (client *KsyunClient) WithKs3Client(do func(*ks3.Client) (interface{}, erro
 	goSdkMutex.Lock()
 	defer goSdkMutex.Unlock()
 
-	// Initialize the OSS client if necessary
+	// Initialize the KS3 client if necessary
 	if client.ks3conn == nil {
 		schma := strings.ToLower(client.config.Protocol)
-		endpoint := client.config.OssEndpoint
+		endpoint := client.config.Ks3Endpoint
 		if endpoint == "" {
-			endpoint = loadEndpoint(client.config.RegionId, OSSCode)
+			endpoint = loadEndpoint(client.config.RegionId, KS3Code)
 		}
 		if endpoint == "" {
-			endpointItem, err := client.describeEndpointForService(strings.ToLower(string(OSSCode)))
+			endpointItem, err := client.describeEndpointForService(strings.ToLower(string(KS3Code)))
 			if err != nil {
 				log.Printf("describeEndpointForService got an error: %#v.", err)
 			}
 			endpoint = endpointItem
 			if endpoint == "" {
-				endpoint = fmt.Sprintf("ks3-%s.aliyuncs.com", client.RegionId)
+				endpoint = fmt.Sprintf("ks3-%s.ksyuncs.com", client.RegionId)
 			}
 		}
 		if !strings.HasPrefix(endpoint, "http") {
@@ -200,7 +167,7 @@ func (client *KsyunClient) WithKs3Client(do func(*ks3.Client) (interface{}, erro
 
 		ks3conn, err := ks3.New(endpoint, "", "", clientOptions...)
 		if err != nil {
-			return nil, fmt.Errorf("unable to initialize the OSS client: %#v", err)
+			return nil, fmt.Errorf("unable to initialize the KS3 client: %#v", err)
 		}
 
 		client.ks3conn = ks3conn
@@ -248,7 +215,7 @@ func (client *KsyunClient) NewCommonRequest(product, serviceCode, schema string,
 		request.Domain = endpoint
 	} else {
 		// When getting endpoint failed by location, using custom endpoint instead
-		request.Domain = fmt.Sprintf("%s.%s.aliyuncs.com", strings.ToLower(serviceCode), client.RegionId)
+		request.Domain = fmt.Sprintf("%s.%s.ksyuncs.com", strings.ToLower(serviceCode), client.RegionId)
 	}
 	request.Version = string(apiVersion)
 	request.RegionId = client.RegionId

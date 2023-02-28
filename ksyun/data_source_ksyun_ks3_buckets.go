@@ -13,7 +13,7 @@ import (
 
 func dataSourceKsyunKs3Buckets() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceAlicloudKs3BucketsRead,
+		Read: dataSourceKsyunKs3BucketsRead,
 
 		Schema: map[string]*schema.Schema{
 			"name_regex": {
@@ -247,7 +247,7 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 	}
 }
 
-func dataSourceAlicloudKs3BucketsRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceKsyunKs3BucketsRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*connectivity.KsyunClient)
 	var requestInfo *ks3.Client
 	var allBuckets []ks3.BucketProperties

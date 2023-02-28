@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/wilac-pv/ksyun-ks3-go-sdk/ks3"
 	"io/ioutil"
 	"log"
@@ -15,8 +16,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 )
 
 type Status string

@@ -34,7 +34,7 @@ func tagsSchemaWithIgnore() *schema.Schema {
 		Optional: true,
 		Elem: &schema.Schema{
 			Type:         schema.TypeString,
-			ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile(`(^acs:.*)|(^aliyun.*)|(/.*http://.*\.\w+/gm)|(/.*https://.*\.\w+/gm)`), "It cannot begin with \"aliyun\", \"acs:\"; without \"http://\", and \"https://\"."),
+			ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile(`(^acs:.*)|(^ksyun.*)|(/.*http://.*\.\w+/gm)|(/.*https://.*\.\w+/gm)`), "It cannot begin with \"ksyun\", \"acs:\"; without \"http://\", and \"https://\"."),
 		},
 	}
 }
@@ -94,7 +94,7 @@ func tagsToMap(tags interface{}) map[string]interface{} {
 }
 
 func tagIgnored(tagKey string, tagValue interface{}) bool {
-	filter := []string{"^aliyun", "^acs:", "^http://", "^https://", "^sae.do.not.delete"}
+	filter := []string{"^ksyun", "^acs:", "^http://", "^https://", "^sae.do.not.delete"}
 	for _, v := range filter {
 		log.Printf("[DEBUG] Matching prefix %v with %v\n", v, tagKey)
 		ok, _ := regexp.MatchString(v, tagKey)

@@ -2,6 +2,10 @@ package connectivity
 
 import (
 	"fmt"
+	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth"
+	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credentials"
+	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
+	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/responses"
 	"log"
 	"sync"
 
@@ -9,17 +13,13 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth"
-	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credentials"
-	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
-	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/responses"
 	credential "github.com/aliyun/credentials-go/credentials"
 	"github.com/jmespath/go-jmespath"
 )
 
 var securityCredURL = "http://100.100.100.200/latest/meta-data/ram/security-credentials/"
 
-// Config of aliyun
+// Config of ksyun
 type Config struct {
 	AccessKey                string
 	SecretKey                string
@@ -42,7 +42,7 @@ type Config struct {
 	RamRolePolicy            string
 	RamRoleSessionExpiration int
 	Endpoints                *sync.Map
-	OssEndpoint              string
+	Ks3Endpoint              string
 }
 
 func (c *Config) loadAndValidate() error {
@@ -90,7 +90,7 @@ func (c *Config) getAuthCredential(stsSupported bool) auth.Credential {
 // Actually, the job should be done by sdk, but currently not all resources and products support alibaba-cloud-sdk-go,
 // and their go sdk does support ecs role name.
 // This method is a temporary solution and it should be removed after all go sdk support ecs role name
-// The related PR: https://github.com/aliyun/terraform-provider-ks3/pull/731
+// The related PR: https://github.com/ksyun/terraform-provider-ks3/pull/731
 func (c *Config) getAuthCredentialByEcsRoleName() (accessKey, secretKey, token string, err error) {
 	if c.AccessKey != "" {
 		return c.AccessKey, c.SecretKey, c.SecurityToken, nil

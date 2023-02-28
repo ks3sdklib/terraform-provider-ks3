@@ -16,7 +16,7 @@ resource "ksyun_ks3_bucket" "bucket-cors" {
   }
 
   cors_rule {
-    allowed_origins = [var.allow-origins-aliyun]
+    allowed_origins = [var.allow-origins-ksyun]
     allowed_methods = split(",", var.allow-methods-get)
     allowed_headers = [var.allowed_headers]
     expose_headers  = [var.expose_headers]

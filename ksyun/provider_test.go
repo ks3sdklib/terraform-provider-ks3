@@ -136,7 +136,7 @@ func checkoutSupportedRegions(t *testing.T, supported bool, regions []connectivi
 // If supported is true, the regions should a list of supporting the service regions.
 // If supported is false, the regions should a list of unsupporting the service regions.
 
-func testAccCheckAlicloudDataSourceID(n string) resource.TestCheckFunc {
+func testAccCheckKsyunDataSourceID(n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -156,7 +156,7 @@ provider "ksyun" {
 }
 `
 
-func TestAccAlicloudProviderOss(t *testing.T) {
+func TestAccKsyunProviderKs3(t *testing.T) {
 	//var v ks3.GetBucketInfoResult
 
 	//resourceId := "ksyun_ks3_bucket.default"
@@ -173,7 +173,7 @@ func TestAccAlicloudProviderOss(t *testing.T) {
 	//rand := acctest.RandIntRange(1000, 9999)
 	//name := fmt.Sprintf("tf-testacc%sbucket-%d", defaultRegionToTest, rand)
 	//testAccConfig := resourceTestAccConfigFunc(resourceId, name, func(name string) string {
-	//	return providerCommon + resourceOssBucketConfigDependence(name)
+	//	return providerCommon + resourceKs3BucketConfigDependence(name)
 	//})
 	//
 	//resource.Test(t, resource.TestCase{

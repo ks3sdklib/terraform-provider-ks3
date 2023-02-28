@@ -2,14 +2,11 @@ package ksyun
 
 import (
 	"github.com/wilac-pv/ksyun-ks3-go-sdk/ks3"
-	"regexp"
 	"strings"
 
 	"fmt"
 	"log"
 	"runtime"
-
-	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/errors"
 )
 
 const (
@@ -34,7 +31,7 @@ type ProviderError struct {
 }
 
 func (e *ProviderError) Error() string {
-	return fmt.Sprintf("[ERROR] Terraform Alicloud Provider Error: Code: %s Message: %s", e.errorCode, e.message)
+	return fmt.Sprintf("[ERROR] Terraform Ksyun Provider Error: Code: %s Message: %s", e.errorCode, e.message)
 }
 
 func (err *ProviderError) ErrorCode() string {
@@ -65,10 +62,6 @@ func NotFoundError(err error) bool {
 		return false
 	}
 
-	if e, ok := err.(*errors.ServerError); ok {
-		return e.ErrorCode() == InstanceNotFound || e.ErrorCode() == RamInstanceNotFound || e.ErrorCode() == NotFound || e.HttpStatus() == 404 || strings.Contains(strings.ToLower(e.Message()), MessageInstanceNotFound)
-	}
-
 	if e, ok := err.(*ProviderError); ok {
 		return e.ErrorCode() == InstanceNotFound || e.ErrorCode() == RamInstanceNotFound || e.ErrorCode() == NotFound || strings.Contains(strings.ToLower(e.Message()), MessageInstanceNotFound)
 	}
@@ -87,15 +80,6 @@ func IsExpectedErrors(err error, expectCodes []string) bool {
 
 	if e, ok := err.(*ComplexError); ok {
 		return IsExpectedErrors(e.Cause, expectCodes)
-	}
-
-	if e, ok := err.(*errors.ServerError); ok {
-		for _, code := range expectCodes {
-			if e.ErrorCode() == code || strings.Contains(e.Message(), code) {
-				return true
-			}
-		}
-		return false
 	}
 
 	if e, ok := err.(*ProviderError); ok {
@@ -121,26 +105,6 @@ func IsExpectedErrors(err error, expectCodes []string) bool {
 			return true
 		}
 	}
-	return false
-}
-
-func NeedRetry(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	postRegex := regexp.MustCompile("^Post [\"]*https://.*")
-	if postRegex.MatchString(err.Error()) {
-		return true
-	}
-
-	throttlingRegex := regexp.MustCompile("Throttling")
-	codeRegex := regexp.MustCompile("^code: 5[\\d]{2}")
-
-	if e, ok := err.(*errors.ServerError); ok {
-		return e.ErrorCode() == ServiceUnavailable || e.ErrorCode() == "Rejected.Throttling" || throttlingRegex.MatchString(e.ErrorCode()) || codeRegex.MatchString(e.Message())
-	}
-
 	return false
 }
 

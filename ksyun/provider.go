@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/sts"
+	"github.com/mitchellh/go-homedir"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -15,14 +18,11 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 
-	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
-	"github.com/aliyun/alibaba-cloud-sdk-go/services/sts"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/hashcode"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/mutexkv"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	"github.com/mitchellh/go-homedir"
 	"github.com/wilac-pv/terraform-provider-ks3/ksyun/connectivity"
 )
 
@@ -284,7 +284,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		for key, val := range endpoints {
 			endpointInit.Store(key, val)
 		}
-		config.OssEndpoint = strings.TrimSpace(endpoints["ks3"].(string))
+		config.Ks3Endpoint = strings.TrimSpace(endpoints["ks3"].(string))
 	}
 
 	if config.RamRoleArn != "" {
@@ -340,9 +340,9 @@ func init() {
 
 		"account_id": "The account ID for some service API operations. You can retrieve this from the 'Security Settings' section of the Alibaba Cloud console.",
 
-		"profile": "The profile for API operations. If not set, the default profile created with `aliyun configure` will be used.",
+		"profile": "The profile for API operations. If not set, the default profile created with `ksyun configure` will be used.",
 
-		"shared_credentials_file": "The path to the shared credentials file. If not set this defaults to ~/.aliyun/config.json",
+		"shared_credentials_file": "The path to the shared credentials file. If not set this defaults to ~/.ksyun/config.json",
 
 		"assume_role_role_arn": "The ARN of a RAM role to assume prior to making API calls.",
 
@@ -350,7 +350,7 @@ func init() {
 
 		"assume_role_policy": "The permissions applied when assuming a role. You cannot use, this policy to grant further permissions that are in excess to those of the, role that is being assumed.",
 
-		"assume_role_session_expiration": "The time after which the established session for assuming role expires. Valid value range: [900-3600] seconds. Default to 0 (in this case Alicloud use own default value).",
+		"assume_role_session_expiration": "The time after which the established session for assuming role expires. Valid value range: [900-3600] seconds. Default to 0 (in this case Ksyun use own default value).",
 
 		"skip_region_validation": "Skip static validation of region ID. Used by users of alternative AlibabaCloud-like APIs or users w/ access to regions that are not public (yet).",
 
@@ -373,7 +373,7 @@ func init() {
 
 		"ess_endpoint": "Use this to override the default endpoint URL constructed from the `region`. It's typically used to connect to custom Autoscaling endpoints.",
 
-		"ks3_endpoint": "Use this to override the default endpoint URL constructed from the `region`. It's typically used to connect to custom OSS endpoints.",
+		"ks3_endpoint": "Use this to override the default endpoint URL constructed from the `region`. It's typically used to connect to custom KS3 endpoints.",
 
 		"ons_endpoint": "Use this to override the default endpoint URL constructed from the `region`. It's typically used to connect to custom ONS endpoints.",
 
@@ -1625,9 +1625,9 @@ func getConfigFromProfile(d *schema.ResourceData, ProfileKey string) (interface{
 			return nil, WrapError(err)
 		}
 		if profilePath == "" {
-			profilePath = fmt.Sprintf("%s/.aliyun/config.json", os.Getenv("HOME"))
+			profilePath = fmt.Sprintf("%s/.ksyun/config.json", os.Getenv("HOME"))
 			if runtime.GOOS == "windows" {
-				profilePath = fmt.Sprintf("%s/.aliyun/config.json", os.Getenv("USERPROFILE"))
+				profilePath = fmt.Sprintf("%s/.ksyun/config.json", os.Getenv("USERPROFILE"))
 			}
 		}
 		providerConfig = make(map[string]interface{})

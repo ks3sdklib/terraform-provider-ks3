@@ -10,8 +10,8 @@ variable "allow-origins-star" {
   default = "*"
 }
 
-variable "allow-origins-aliyun" {
-  default = "http://www.aliyun.com, http://*.aliyun.com"
+variable "allow-origins-ksyun" {
+  default = "http://www.ksyun.com, http://*.ksyun.com"
 }
 
 variable "allow-methods-get" {

@@ -13,7 +13,7 @@ import (
 type ServiceCode string
 
 const (
-	OSSCode = ServiceCode("OSS")
+	KS3Code = ServiceCode("KS3")
 )
 
 type Endpoints struct {
