@@ -33,19 +33,19 @@ func Provider() terraform.ResourceProvider {
 			"access_key": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				DefaultFunc: schema.EnvDefaultFunc("KS3_TEST_ACCESS_KEY_ID", os.Getenv("ALIBABACLOUD_ACCESS_KEY_ID")),
+				DefaultFunc: schema.EnvDefaultFunc("KS3_TEST_ACCESS_KEY_ID", os.Getenv("KS3_TEST_ACCESS_KEY_ID")),
 				Description: descriptions["access_key"],
 			},
 			"secret_key": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				DefaultFunc: schema.EnvDefaultFunc("KS3_TEST_ACCESS_KEY_SECRET", os.Getenv("ALIBABACLOUD_ACCESS_KEY_SECRET")),
+				DefaultFunc: schema.EnvDefaultFunc("KS3_TEST_ACCESS_KEY_SECRET", os.Getenv("KS3_TEST_ACCESS_KEY_SECRET")),
 				Description: descriptions["secret_key"],
 			},
 			"security_token": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				DefaultFunc: schema.EnvDefaultFunc("KSYUN_SECURITY_TOKEN", os.Getenv("ALIBABACLOUD_SECURITY_TOKEN")),
+				DefaultFunc: schema.EnvDefaultFunc("KSYUN_SECURITY_TOKEN", os.Getenv("KSYUN_SECURITY_TOKEN")),
 				Description: descriptions["security_token"],
 			},
 			"ecs_role_name": {
@@ -60,20 +60,10 @@ func Provider() terraform.ResourceProvider {
 				DefaultFunc: schema.EnvDefaultFunc("KS3_TEST_REGION", os.Getenv("KS3_TEST_REGION")),
 				Description: descriptions["region"],
 			},
-			"ots_instance_name": {
-				Type:       schema.TypeString,
-				Optional:   true,
-				Deprecated: "Field 'ots_instance_name' has been deprecated from provider version 1.10.0. New field 'instance_name' of resource 'ksyun_ots_table' instead.",
-			},
 			"log_endpoint": {
 				Type:       schema.TypeString,
 				Optional:   true,
 				Deprecated: "Field 'log_endpoint' has been deprecated from provider version 1.28.0. New field 'log' which in nested endpoints instead.",
-			},
-			"mns_endpoint": {
-				Type:       schema.TypeString,
-				Optional:   true,
-				Deprecated: "Field 'mns_endpoint' has been deprecated from provider version 1.28.0. New field 'mns' which in nested endpoints instead.",
 			},
 			"account_id": {
 				Type:        schema.TypeString,
@@ -82,12 +72,7 @@ func Provider() terraform.ResourceProvider {
 				Description: descriptions["account_id"],
 			},
 			"assume_role": assumeRoleSchema(),
-			"fc": {
-				Type:       schema.TypeString,
-				Optional:   true,
-				Deprecated: "Field 'fc' has been deprecated from provider version 1.28.0. New field 'fc' which in nested endpoints instead.",
-			},
-			"endpoints": endpointsSchema(),
+			"endpoints":   endpointsSchema(),
 			"shared_credentials_file": {
 				Type:        schema.TypeString,
 				Optional:    true,
