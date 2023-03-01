@@ -122,21 +122,10 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	fmt.Println(fmt.Sprintf("secretKey=%s", accessKey))
 	fmt.Println(fmt.Sprintf("securityToken=%s", securityToken))
 	config := &connectivity.Config{
-		AccessKey:            strings.TrimSpace(accessKey),
-		SecretKey:            strings.TrimSpace(secretKey),
-		SecurityToken:        securityToken,
-		Region:               connectivity.Region(strings.TrimSpace(region)),
-		SkipRegionValidation: d.Get("skip_region_validation").(bool),
-		ConfigurationSource:  d.Get("configuration_source").(string),
-		Protocol:             d.Get("protocol").(string),
-		ClientReadTimeout:    d.Get("client_read_timeout").(int),
-		ClientConnectTimeout: d.Get("client_connect_timeout").(int),
-		SourceIp:             strings.TrimSpace(d.Get("source_ip").(string)),
-		SecureTransport:      strings.TrimSpace(d.Get("secure_transport").(string)),
-		MaxRetryTimeout:      d.Get("max_retry_timeout").(int),
-	}
-	if v, ok := d.GetOk("security_transport"); config.SecureTransport == "" && ok && v.(string) != "" {
-		config.SecureTransport = v.(string)
+		AccessKey:     strings.TrimSpace(accessKey),
+		SecretKey:     strings.TrimSpace(secretKey),
+		SecurityToken: securityToken,
+		Region:        connectivity.Region(strings.TrimSpace(region)),
 	}
 
 	client, err := config.Client()
