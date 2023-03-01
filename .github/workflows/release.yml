@@ -16,6 +16,7 @@ on:
       - 'v*'
 permissions:
   contents: write
+runs-on: self-hosted
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
