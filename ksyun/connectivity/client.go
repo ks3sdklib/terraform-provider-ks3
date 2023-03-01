@@ -79,11 +79,7 @@ func (defCre *ks3Credentials) GetAccessKeySecret() string {
 }
 
 func (defCre *ks3Credentials) GetSecurityToken() string {
-	value, err := defCre.client.teaSdkConfig.Credential.GetSecurityToken()
-	if err == nil && value != nil {
-		return *value
-	}
-	return defCre.client.config.SecurityToken
+	return ""
 }
 
 type ks3CredentialsProvider struct {

@@ -8,8 +8,6 @@ import (
 	credential "github.com/aliyun/credentials-go/credentials"
 )
 
-var securityCredURL = "http://100.100.100.200/latest/meta-data/ram/security-credentials/"
-
 // Config of ksyun
 type Config struct {
 	AccessKey            string

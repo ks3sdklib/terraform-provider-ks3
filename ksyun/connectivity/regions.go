@@ -5,14 +5,14 @@ type Region string
 
 // Constants of region definition
 const (
-	Qingdao  = Region("cn-qingdao")
-	Beijing  = Region("BEJING")
-	Hongkong = Region("hongkong")
-	Shanghai = Region("shanghai")
+	GUANGZHOU = Region("GUANGZHOU")
+	BEIJING   = Region("BEIJING")
+	HONGKONG  = Region("HONGKONG")
+	SHANGHAI  = Region("SHANGHAI")
 )
 
 var ValidRegions = []Region{
-	Qingdao, Beijing, Hongkong, Shanghai,
+	GUANGZHOU, BEIJING, HONGKONG, SHANGHAI,
 }
 
-var Ks3SseSupportedRegions = []Region{Qingdao, Beijing, Shanghai, Hongkong}
+var Ks3SseSupportedRegions = []Region{GUANGZHOU, BEIJING, SHANGHAI, HONGKONG}
