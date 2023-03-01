@@ -111,13 +111,13 @@ func (client *KsyunClient) WithKs3Client(do func(*ks3.Client) (interface{}, erro
 			endpoint = fmt.Sprintf("%s://%s", schema, endpoint)
 		}
 		if endpoint == "" {
-			endpoint = ""
+			endpoint = "ks3-cn-beijing.ksyuncs.com"
 		}
 
 		clientOptions := []ks3.ClientOption{ks3.UserAgent(client.getUserAgent())}
 		clientOptions = append(clientOptions, ks3.SetCredentialsProvider(&ks3CredentialsProvider{client: client}))
 
-		ks3conn, err := ks3.New(endpoint, "", "", clientOptions...)
+		ks3conn, err := ks3.New(endpoint, client.AccessKey, client.SecretKey, clientOptions...)
 		if err != nil {
 			return nil, fmt.Errorf("unable to initialize the KS3 client: %#v", err)
 		}
