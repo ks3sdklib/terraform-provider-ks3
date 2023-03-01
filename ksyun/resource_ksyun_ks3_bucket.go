@@ -164,14 +164,12 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"date": {
-										Type:         schema.TypeString,
-										Optional:     true,
-										ValidateFunc: validateKs3BucketDateTimestamp,
+										Type:     schema.TypeString,
+										Optional: true,
 									},
 									"created_before_date": {
-										Type:         schema.TypeString,
-										Optional:     true,
-										ValidateFunc: validateKs3BucketDateTimestamp,
+										Type:     schema.TypeString,
+										Optional: true,
 									},
 									"days": {
 										Type:     schema.TypeInt,
@@ -191,9 +189,8 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"created_before_date": {
-										Type:         schema.TypeString,
-										Optional:     true,
-										ValidateFunc: validateKs3BucketDateTimestamp,
+										Type:     schema.TypeString,
+										Optional: true,
 									},
 									"days": {
 										Type:     schema.TypeInt,
@@ -219,9 +216,8 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"created_before_date": {
-										Type:         schema.TypeString,
-										Optional:     true,
-										ValidateFunc: validateKs3BucketDateTimestamp,
+										Type:     schema.TypeString,
+										Optional: true,
 									},
 									"days": {
 										Type:     schema.TypeInt,

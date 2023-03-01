@@ -8,11 +8,8 @@ import (
 	"github.com/wilac-pv/ksyun-ks3-go-sdk/ks3"
 
 	"fmt"
-	"log"
 	"net/http"
-	"net/url"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -21,27 +18,17 @@ import (
 
 type KsyunClient struct {
 	Region          Region
-	RegionId        string
 	SourceIp        string
 	SecureTransport string
-	//In order to build ots table client, add accesskey and secretkey in ksyunclient temporarily.
 	AccessKey       string
 	SecretKey       string
 	SecurityToken   string
-	OtsInstanceName string
 	accountIdMutex  sync.RWMutex
 	config          *Config
 	teaSdkConfig    rpc.Config
 	accountId       string
 	ks3conn         *ks3.Client
-	teaConn         *rpc.Client
 }
-
-type ApiVersion string
-
-const (
-	ApiVersion20140515 = ApiVersion("2014-05-15")
-)
 
 const DefaultClientRetryCountSmall = 5
 
@@ -61,22 +48,13 @@ var terraformVersion = strings.TrimSuffix(schema.Provider{}.TerraformVersion, "-
 
 // Client for KsyunClient
 func (c *Config) Client() (*KsyunClient, error) {
-	loadLocalEndpoint = hasLocalEndpoint()
-	if hasLocalEndpoint() {
-		if err := c.loadEndpointFromLocal(); err != nil {
-			return nil, err
-		}
-	}
 	return &KsyunClient{
-		config:          c,
-		SourceIp:        c.SourceIp,
-		Region:          c.Region,
-		RegionId:        c.RegionId,
-		AccessKey:       c.AccessKey,
-		SecretKey:       c.SecretKey,
-		SecurityToken:   c.SecurityToken,
-		OtsInstanceName: c.OtsInstanceName,
-		accountId:       c.AccountId,
+		config:        c,
+		SourceIp:      c.SourceIp,
+		Region:        c.Region,
+		AccessKey:     c.AccessKey,
+		SecretKey:     c.SecretKey,
+		SecurityToken: c.SecurityToken,
 	}, nil
 }
 
@@ -132,37 +110,16 @@ func (client *KsyunClient) WithKs3Client(do func(*ks3.Client) (interface{}, erro
 
 	// Initialize the KS3 client if necessary
 	if client.ks3conn == nil {
-		schma := strings.ToLower(client.config.Protocol)
+		schema := strings.ToLower(client.config.Protocol)
 		endpoint := client.config.Ks3Endpoint
-		if endpoint == "" {
-			endpoint = loadEndpoint(client.config.RegionId, KS3Code)
-		}
-		if endpoint == "" {
-			endpointItem, err := client.describeEndpointForService(strings.ToLower(string(KS3Code)))
-			if err != nil {
-				log.Printf("describeEndpointForService got an error: %#v.", err)
-			}
-			endpoint = endpointItem
-			if endpoint == "" {
-				endpoint = fmt.Sprintf("ks3-%s.ksyuncs.com", client.RegionId)
-			}
-		}
 		if !strings.HasPrefix(endpoint, "http") {
-			endpoint = fmt.Sprintf("%s://%s", schma, endpoint)
+			endpoint = fmt.Sprintf("%s://%s", schema, endpoint)
+		}
+		if endpoint == "" {
+			endpoint = ""
 		}
 
 		clientOptions := []ks3.ClientOption{ks3.UserAgent(client.getUserAgent())}
-		proxy, err := client.getHttpProxy()
-		if proxy != nil {
-			skip, err := client.skipProxy(endpoint)
-			if err != nil {
-				return nil, err
-			}
-			if !skip {
-				clientOptions = append(clientOptions, ks3.Proxy(proxy.String()))
-			}
-		}
-
 		clientOptions = append(clientOptions, ks3.SetCredentialsProvider(&ks3CredentialsProvider{client: client}))
 
 		ks3conn, err := ks3.New(endpoint, "", "", clientOptions...)
@@ -198,28 +155,16 @@ func (client *KsyunClient) NewTeaCommonClient(endpoint string) (*rpc.Client, err
 	return conn, nil
 }
 
-func (client *KsyunClient) NewCommonRequest(product, serviceCode, schema string, apiVersion ApiVersion) (*requests.CommonRequest, error) {
+func (client *KsyunClient) NewCommonRequest(schema string) (*requests.CommonRequest, error) {
 	endpoint := ""
-	product = strings.ToLower(product)
-	if _, exist := client.config.Endpoints.Load(product); !exist {
-		if err := client.loadEndpoint(product); err != nil {
-			return nil, err
-		}
-	}
-	if v, exist := client.config.Endpoints.Load(product); exist && v.(string) != "" {
-		endpoint = v.(string)
-	}
 	request := requests.NewCommonRequest()
 	// Use product code to find product domain
 	if endpoint != "" {
 		request.Domain = endpoint
 	} else {
 		// When getting endpoint failed by location, using custom endpoint instead
-		request.Domain = fmt.Sprintf("%s.%s.ksyuncs.com", strings.ToLower(serviceCode), client.RegionId)
+		request.Domain = "ks3-cn-beijing.ksyuncs.com"
 	}
-	request.Version = string(apiVersion)
-	request.RegionId = client.RegionId
-	request.Product = product
 	request.Scheme = schema
 	request.SetReadTimeout(time.Duration(client.config.ClientReadTimeout) * time.Millisecond)
 	request.SetConnectTimeout(time.Duration(client.config.ClientConnectTimeout) * time.Millisecond)
@@ -254,43 +199,4 @@ func (client *KsyunClient) getTransport() *http.Transport {
 	transport.TLSHandshakeTimeout = time.Duration(handshakeTimeout) * time.Second
 
 	return transport
-}
-
-func (client *KsyunClient) getHttpProxy() (proxy *url.URL, err error) {
-	if client.config.Protocol == "HTTPS" {
-		if rawurl := os.Getenv("HTTPS_PROXY"); rawurl != "" {
-			proxy, err = url.Parse(rawurl)
-		} else if rawurl := os.Getenv("https_proxy"); rawurl != "" {
-			proxy, err = url.Parse(rawurl)
-		}
-	} else {
-		if rawurl := os.Getenv("HTTP_PROXY"); rawurl != "" {
-			proxy, err = url.Parse(rawurl)
-		} else if rawurl := os.Getenv("http_proxy"); rawurl != "" {
-			proxy, err = url.Parse(rawurl)
-		}
-	}
-	return proxy, err
-}
-
-func (client *KsyunClient) skipProxy(endpoint string) (bool, error) {
-	var urls []string
-	if rawurl := os.Getenv("NO_PROXY"); rawurl != "" {
-		urls = strings.Split(rawurl, ",")
-	} else if rawurl := os.Getenv("no_proxy"); rawurl != "" {
-		urls = strings.Split(rawurl, ",")
-	}
-	for _, value := range urls {
-		if strings.HasPrefix(value, "*") {
-			value = fmt.Sprintf(".%s", value)
-		}
-		noProxyReg, err := regexp.Compile(value)
-		if err != nil {
-			return false, err
-		}
-		if noProxyReg.MatchString(endpoint) {
-			return true, nil
-		}
-	}
-	return false, nil
 }
