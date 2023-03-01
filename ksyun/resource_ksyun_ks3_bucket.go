@@ -198,12 +198,12 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 									},
 									"storage_class": {
 										Type:     schema.TypeString,
-										Default:  ks3.StorageStandard,
+										Default:  ks3.TypeNormal,
 										Optional: true,
 										ValidateFunc: validation.StringInSlice([]string{
-											string(ks3.StorageStandard),
-											string(ks3.StorageIA),
-											string(ks3.StorageArchive),
+											string(ks3.TypeNormal),
+											string(ks3.TypeIA),
+											string(ks3.TypeArchive),
 										}, false),
 									},
 								},
@@ -253,9 +253,9 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 										Type:     schema.TypeString,
 										Required: true,
 										ValidateFunc: validation.StringInSlice([]string{
-											string(ks3.StorageStandard),
-											string(ks3.StorageIA),
-											string(ks3.StorageArchive),
+											string(ks3.TypeNormal),
+											string(ks3.TypeIA),
+											string(ks3.TypeArchive),
 										}, false),
 									},
 								},
@@ -292,13 +292,13 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 			},
 			"storage_class": {
 				Type:     schema.TypeString,
-				Default:  ks3.StorageStandard,
+				Default:  ks3.TypeNormal,
 				Optional: true,
 				ForceNew: true,
 				ValidateFunc: validation.StringInSlice([]string{
-					string(ks3.StorageStandard),
-					string(ks3.StorageIA),
-					string(ks3.StorageArchive),
+					string(ks3.TypeNormal),
+					string(ks3.TypeIA),
+					string(ks3.TypeArchive),
 				}, false),
 			},
 			"server_side_encryption_rule": {
