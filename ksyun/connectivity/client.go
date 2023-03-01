@@ -48,13 +48,17 @@ var terraformVersion = strings.TrimSuffix(schema.Provider{}.TerraformVersion, "-
 
 // Client for KsyunClient
 func (c *Config) Client() (*KsyunClient, error) {
+	accessKey := os.Getenv("KS3_ACCESS_KEY_ID")
+	secretKey := os.Getenv("KS3_ACCESS_KEY_SECRET")
+	region := os.Getenv("KS3_REGION")
+	securityToken := os.Getenv("KSYUN_SECURITY_TOKEN")
+
 	return &KsyunClient{
 		config:        c,
-		SourceIp:      c.SourceIp,
-		Region:        c.Region,
-		AccessKey:     c.AccessKey,
-		SecretKey:     c.SecretKey,
-		SecurityToken: c.SecurityToken,
+		Region:        Region(region),
+		AccessKey:     accessKey,
+		SecretKey:     secretKey,
+		SecurityToken: securityToken,
 	}, nil
 }
 
@@ -63,19 +67,14 @@ type ks3Credentials struct {
 }
 
 func (defCre *ks3Credentials) GetAccessKeyID() string {
-	value, err := defCre.client.teaSdkConfig.Credential.GetAccessKeyId()
-	if err == nil && value != nil {
-		return *value
-	}
-	return defCre.client.config.AccessKey
+
+	accessKey := os.Getenv("KS3_ACCESS_KEY_ID")
+	return accessKey
 }
 
 func (defCre *ks3Credentials) GetAccessKeySecret() string {
-	value, err := defCre.client.teaSdkConfig.Credential.GetAccessKeySecret()
-	if err == nil && value != nil {
-		return *value
-	}
-	return defCre.client.config.SecretKey
+	secretKey := os.Getenv("KS3_ACCESS_KEY_SECRET")
+	return secretKey
 }
 
 func (defCre *ks3Credentials) GetSecurityToken() string {
