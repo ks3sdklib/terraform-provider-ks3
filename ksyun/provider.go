@@ -147,19 +147,13 @@ func init() {
 
 		"secret_key": "The secret key for API operations. You can retrieve this from the 'Security Management' section of the Ksyun Cloud console.",
 
-		"region": "The region where Ksyun Cloud operations will take place. Examples are  BEIJING etc.",
+		"region": "The region where Ksyun-ks3 operations will take place. Examples are  BEIJING etc.",
 
 		"security_token": "security token. A security token is only required if you are using Security Token Service.",
-
-		"skip_region_validation": "Skip static validation of region ID. Used by users of alternative KsyunCloud-like APIs or users w/ access to regions that are not public (yet).",
-
-		"configuration_source": "Use this to mark a terraform configuration file source.",
 
 		"client_read_timeout": "The maximum timeout of the client read request.",
 
 		"client_connect_timeout": "The maximum timeout of the client connection server.",
-
-		"secure_transport": "The security transport for the assume role invoking.",
 
 		"max_retry_timeout": "The maximum retry timeout of the request.",
 

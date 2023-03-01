@@ -17,17 +17,14 @@ import (
 )
 
 type KsyunClient struct {
-	Region          Region
-	SourceIp        string
-	SecureTransport string
-	AccessKey       string
-	SecretKey       string
-	SecurityToken   string
-	accountIdMutex  sync.RWMutex
-	config          *Config
-	teaSdkConfig    rpc.Config
-	accountId       string
-	ks3conn         *ks3.Client
+	Region         Region
+	AccessKey      string
+	SecretKey      string
+	SecurityToken  string
+	accountIdMutex sync.RWMutex
+	config         *Config
+	teaSdkConfig   rpc.Config
+	ks3conn        *ks3.Client
 }
 
 const DefaultClientRetryCountSmall = 5
@@ -81,14 +78,6 @@ func (defCre *ks3Credentials) GetSecurityToken() string {
 	return ""
 }
 
-type ks3CredentialsProvider struct {
-	client *KsyunClient
-}
-
-func (defBuild *ks3CredentialsProvider) GetCredentials() ks3.Credentials {
-	return &ks3Credentials{client: defBuild.client}
-}
-
 func (client *KsyunClient) GetRetryTimeout(defaultTimeout time.Duration) time.Duration {
 
 	maxRetryTimeout := client.config.MaxRetryTimeout
@@ -105,7 +94,7 @@ func (client *KsyunClient) WithKs3Client(do func(*ks3.Client) (interface{}, erro
 
 	// Initialize the KS3 client if necessary
 	if client.ks3conn == nil {
-		endpoint := "http://ks3-cn-beijing.ksyuncs.com"
+		endpoint := "https://ks3-cn-beijing.ksyuncs.com"
 		ks3conn, err := ks3.New(endpoint, client.AccessKey, client.SecretKey)
 		if err != nil {
 			return nil, fmt.Errorf("unable to initialize the KS3 client: %#v", err)
@@ -139,15 +128,8 @@ func (client *KsyunClient) NewTeaCommonClient(endpoint string) (*rpc.Client, err
 }
 
 func (client *KsyunClient) NewCommonRequest(schema string) (*requests.CommonRequest, error) {
-	endpoint := ""
 	request := requests.NewCommonRequest()
-	// Use product code to find product domain
-	if endpoint != "" {
-		request.Domain = endpoint
-	} else {
-		// When getting endpoint failed by location, using custom endpoint instead
-		request.Domain = "ks3-cn-beijing.ksyuncs.com"
-	}
+	request.Domain = "ks3-cn-beijing.ksyuncs.com"
 	request.Scheme = schema
 	request.SetReadTimeout(time.Duration(client.config.ClientReadTimeout) * time.Millisecond)
 	request.SetConnectTimeout(time.Duration(client.config.ClientConnectTimeout) * time.Millisecond)

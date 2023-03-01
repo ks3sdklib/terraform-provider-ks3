@@ -66,10 +66,6 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"redundancy_type": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
 						"creation_date": {
 							Type:     schema.TypeString,
 							Computed: true,
@@ -107,26 +103,6 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 								},
 							},
 						},
-
-						"website": {
-							Type:     schema.TypeList,
-							Computed: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"index_document": {
-										Type:     schema.TypeString,
-										Computed: true,
-									},
-
-									"error_document": {
-										Type:     schema.TypeString,
-										Computed: true,
-									},
-								},
-							},
-							MaxItems: 1,
-						},
-
 						"logging": {
 							Type:     schema.TypeList,
 							Computed: true,
@@ -391,30 +367,6 @@ func bucketsDescriptionAttributes(d *schema.ResourceData, buckets []ks3.BucketPr
 			log.Printf("[WARN] Unable to get CORS information for the bucket %s: %v", bucket.Name, err)
 		}
 		mapping["cors_rules"] = ruleMappings
-
-		// Add website configuration
-		var websiteMappings []map[string]interface{}
-		raw, err = client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-			requestInfo = ks3Client
-			return ks3Client.GetBucketWebsite(bucket.Name)
-		})
-		if err == nil {
-			if debugOn() {
-				addDebug("GetBucketWebsite", raw, requestInfo, map[string]string{"bucketName": bucket.Name})
-			}
-			ws, _ := raw.(ks3.GetBucketWebsiteResult)
-			websiteMapping := make(map[string]interface{})
-			if v := &ws.IndexDocument; v != nil {
-				websiteMapping["index_document"] = v.Suffix
-			}
-			if v := &ws.ErrorDocument; v != nil {
-				websiteMapping["error_document"] = v.Key
-			}
-			websiteMappings = append(websiteMappings, websiteMapping)
-		} else if !IsExpectedErrors(err, []string{"NoSuchWebsiteConfiguration"}) {
-			log.Printf("[WARN] Unable to get website information for the bucket %s: %v", bucket.Name, err)
-		}
-		mapping["website"] = websiteMappings
 
 		// Add logging information
 		var loggingMappings []map[string]interface{}

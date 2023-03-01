@@ -17,9 +17,6 @@ type Config struct {
 	Protocol             string
 	ClientReadTimeout    int
 	ClientConnectTimeout int
-	SkipRegionValidation bool
-	SourceIp             string
-	SecureTransport      string
 	MaxRetryTimeout      int
 	ConfigurationSource  string
 	Endpoints            *sync.Map

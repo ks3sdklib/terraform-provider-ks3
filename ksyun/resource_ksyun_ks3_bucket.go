@@ -74,25 +74,6 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 				MaxItems: 10,
 			},
 
-			"website": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"index_document": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-
-						"error_document": {
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				MaxItems: 1,
-			},
-
 			"logging": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -115,26 +96,6 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 				Type:       schema.TypeBool,
 				Optional:   true,
 				Deprecated: "Deprecated from 1.37.0. When `logging` is set, the bucket logging will be able.",
-			},
-
-			"referer_config": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"allow_empty": {
-							Type:     schema.TypeBool,
-							Optional: true,
-							Computed: true,
-						},
-						"referers": {
-							Type:     schema.TypeList,
-							Required: true,
-							Elem:     &schema.Schema{Type: schema.TypeString},
-						},
-					},
-				},
-				MaxItems: 1,
 			},
 
 			"lifecycle_rule": {
@@ -182,33 +143,6 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 								},
 							},
 						},
-						"transitions": {
-							Type:     schema.TypeSet,
-							Optional: true,
-							Set:      transitionsHash,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"created_before_date": {
-										Type:     schema.TypeString,
-										Optional: true,
-									},
-									"days": {
-										Type:     schema.TypeInt,
-										Optional: true,
-									},
-									"storage_class": {
-										Type:     schema.TypeString,
-										Default:  ks3.TypeNormal,
-										Optional: true,
-										ValidateFunc: validation.StringInSlice([]string{
-											string(ks3.TypeNormal),
-											string(ks3.TypeIA),
-											string(ks3.TypeArchive),
-										}, false),
-									},
-								},
-							},
-						},
 						"abort_multipart_upload": {
 							Type:     schema.TypeSet,
 							Optional: true,
@@ -226,142 +160,23 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 								},
 							},
 						},
-						"noncurrent_version_expiration": {
-							Type:     schema.TypeSet,
-							Optional: true,
-							Set:      expirationHash,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"days": {
-										Type:     schema.TypeInt,
-										Required: true,
-									},
-								},
-							},
-						},
-						"noncurrent_version_transition": {
-							Type:     schema.TypeSet,
-							Optional: true,
-							Set:      transitionsHash,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"days": {
-										Type:     schema.TypeInt,
-										Required: true,
-									},
-									"storage_class": {
-										Type:     schema.TypeString,
-										Required: true,
-										ValidateFunc: validation.StringInSlice([]string{
-											string(ks3.TypeNormal),
-											string(ks3.TypeIA),
-											string(ks3.TypeArchive),
-										}, false),
-									},
-								},
-							},
-						},
 					},
 				},
 				MaxItems: 1000,
 			},
 
-			"policy": {
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			"creation_date": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"extranet_endpoint": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"intranet_endpoint": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"location": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"owner": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
 			"storage_class": {
 				Type:     schema.TypeString,
-				Default:  ks3.TypeNormal,
+				Default:  ks3.StorageStandard,
 				Optional: true,
 				ForceNew: true,
 				ValidateFunc: validation.StringInSlice([]string{
-					string(ks3.TypeNormal),
-					string(ks3.TypeIA),
-					string(ks3.TypeArchive),
+					string(ks3.StorageStandard),
+					string(ks3.StorageIA),
+					string(ks3.StorageArchive),
 				}, false),
 			},
-			"server_side_encryption_rule": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"sse_algorithm": {
-							Type:     schema.TypeString,
-							Required: true,
-							ValidateFunc: validation.StringInSlice([]string{
-								ServerSideEncryptionAes256,
-								ServerSideEncryptionKMS,
-							}, false),
-						},
-						"kms_master_key_id": {
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-				MaxItems: 1,
-			},
-
 			"tags": tagsSchema(),
-
-			"force_destroy": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
-			},
-
-			"versioning": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"status": {
-							Type:     schema.TypeString,
-							Required: true,
-							ValidateFunc: validation.StringInSlice([]string{
-								"Enabled",
-								"Suspended",
-							}, false),
-						},
-					},
-				},
-				MaxItems: 1,
-			},
-
-			"transfer_acceleration": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"enabled": {
-							Type:     schema.TypeBool,
-							Required: true,
-						},
-					},
-				},
-				MaxItems: 1,
-			},
 		},
 	}
 }
