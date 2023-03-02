@@ -17,7 +17,7 @@ func (s *Ks3Service) DescribeKs3Bucket(id string) (response ks3.GetBucketInfoRes
 	var requestInfo *ks3.Client
 	raw, err := s.client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
 		requestInfo = ks3Client
-		return ks3Client.GetBucketInfo(request["bucketName"])
+		return GetBucketInfo(ks3Client, request["bucketName"])
 	})
 	if err != nil {
 		if ks3NotFoundError(err) {

@@ -580,14 +580,6 @@ func resourceKsyunKs3BucketUpdate(d *schema.ResourceData, meta interface{}) erro
 		}
 		d.SetPartial("cors_rule")
 	}
-
-	if d.HasChange("website") {
-		if err := resourceKsyunKs3BucketWebsiteUpdate(client, d); err != nil {
-			return WrapError(err)
-		}
-		d.SetPartial("website")
-	}
-
 	if d.HasChange("logging") {
 		if err := resourceKsyunKs3BucketLoggingUpdate(client, d); err != nil {
 			return WrapError(err)
@@ -616,34 +608,12 @@ func resourceKsyunKs3BucketUpdate(d *schema.ResourceData, meta interface{}) erro
 		d.SetPartial("policy")
 	}
 
-	if d.HasChange("server_side_encryption_rule") {
-		if err := resourceKsyunKs3BucketEncryptionUpdate(client, d); err != nil {
-			return WrapError(err)
-		}
-		d.SetPartial("server_side_encryption_rule")
-	}
-
 	if d.HasChange("tags") {
 		if err := resourceKsyunKs3BucketTaggingUpdate(client, d); err != nil {
 			return WrapError(err)
 		}
 		d.SetPartial("tags")
 	}
-
-	if d.HasChange("versioning") {
-		if err := resourceKsyunKs3BucketVersioningUpdate(client, d); err != nil {
-			return WrapError(err)
-		}
-		d.SetPartial("versioning")
-	}
-
-	if d.HasChange("transfer_acceleration") {
-		if err := resourceKsyunKs3BucketTransferAccUpdate(client, d); err != nil {
-			return WrapError(err)
-		}
-		d.SetPartial("transfer_acceleration")
-	}
-
 	d.Partial(false)
 	return resourceKsyunKs3BucketRead(d, meta)
 }
@@ -711,45 +681,6 @@ func resourceKsyunKs3BucketCorsUpdate(client *connectivity.KsyunClient, d *schem
 	})
 	return nil
 }
-func resourceKsyunKs3BucketWebsiteUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
-	ws := d.Get("website").([]interface{})
-	var requestInfo *ks3.Client
-	if ws == nil || len(ws) == 0 {
-		raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-			requestInfo = ks3Client
-			return nil, ks3Client.DeleteBucketWebsite(d.Id())
-		})
-		if err != nil {
-			return WrapErrorf(err, DefaultErrorMsg, d.Id(), "DeleteBucketWebsite", KsyunKs3GoSdk)
-		}
-		addDebug("DeleteBucketWebsite", raw, requestInfo, map[string]string{"bucketName": d.Id()})
-		return nil
-	}
-
-	var index_document, error_document string
-	w := ws[0].(map[string]interface{})
-
-	if v, ok := w["index_document"]; ok {
-		index_document = v.(string)
-	}
-	if v, ok := w["error_document"]; ok {
-		error_document = v.(string)
-	}
-	raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-		requestInfo = ks3Client
-		return nil, ks3Client.SetBucketWebsite(d.Id(), index_document, error_document)
-	})
-	if err != nil {
-		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "SetBucketWebsite", KsyunKs3GoSdk)
-	}
-	addDebug("SetBucketWebsite", raw, requestInfo, map[string]interface{}{
-		"bucketName":    d.Id(),
-		"indexDocument": index_document,
-		"errorDocument": error_document,
-	})
-	return nil
-}
-
 func resourceKsyunKs3BucketLoggingUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
 	logging := d.Get("logging").([]interface{})
 	var requestInfo *ks3.Client
@@ -1108,61 +1039,6 @@ func resourceKsyunKs3BucketTaggingUpdate(client *connectivity.KsyunClient, d *sc
 		"bucketName": d.Id(),
 		"tagging":    bTagging,
 	})
-	return nil
-}
-
-func resourceKsyunKs3BucketVersioningUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
-	versioning := d.Get("versioning").([]interface{})
-	if len(versioning) == 1 {
-		var status string
-		c := versioning[0].(map[string]interface{})
-		if v, ok := c["status"]; ok {
-			status = v.(string)
-		}
-
-		versioningCfg := ks3.VersioningConfig{}
-		versioningCfg.Status = status
-		var requestInfo *ks3.Client
-		raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-			requestInfo = ks3Client
-			return nil, ks3Client.SetBucketVersioning(d.Id(), versioningCfg)
-		})
-
-		if err != nil {
-			return WrapErrorf(err, DefaultErrorMsg, d.Id(), "SetBucketVersioning", KsyunKs3GoSdk)
-		}
-		addDebug("SetBucketVersioning", raw, requestInfo, map[string]interface{}{
-			"bucketName":       d.Id(),
-			"versioningConfig": versioningCfg,
-		})
-	}
-
-	return nil
-}
-
-func resourceKsyunKs3BucketTransferAccUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
-	acc := d.Get("transfer_acceleration").([]interface{})
-	if len(acc) == 1 {
-		var requestInfo *ks3.Client
-		var aacCfg ks3.TransferAccConfiguration
-		c := acc[0].(map[string]interface{})
-		if v, ok := c["enabled"]; ok {
-			aacCfg.Enabled = v.(bool)
-		}
-
-		raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-			requestInfo = ks3Client
-			return nil, ks3Client.SetBucketTransferAcc(d.Id(), aacCfg)
-		})
-		if err != nil {
-			return WrapErrorf(err, DefaultErrorMsg, d.Id(), "SetBucketTransferAcc", KsyunKs3GoSdk)
-		}
-		addDebug("SetBucketTransferAcc", raw, requestInfo, map[string]interface{}{
-			"bucketName":               d.Id(),
-			"TransferAccConfiguration": aacCfg,
-		})
-	}
-
 	return nil
 }
 

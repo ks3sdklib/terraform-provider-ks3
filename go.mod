@@ -5,7 +5,7 @@ require (
 	github.com/aliyun/credentials-go v1.1.2
 	github.com/hashicorp/terraform-plugin-sdk v1.17.2
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/wilac-pv/ksyun-ks3-go-sdk v1.0.8-0.20230302032658-6f7ce381e3b8
+	github.com/wilac-pv/ksyun-ks3-go-sdk v1.0.9
 )
 
 require (

@@ -182,40 +182,7 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-
-						"server_side_encryption_rule": {
-							Type:     schema.TypeList,
-							Computed: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"sse_algorithm": {
-										Type:     schema.TypeString,
-										Computed: true,
-									},
-									"kms_master_key_id": {
-										Type:     schema.TypeString,
-										Computed: true,
-									},
-								},
-							},
-							MaxItems: 1,
-						},
-
 						"tags": tagsSchemaComputed(),
-
-						"versioning": {
-							Type:     schema.TypeList,
-							Computed: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"status": {
-										Type:     schema.TypeString,
-										Computed: true,
-									},
-								},
-							},
-							MaxItems: 1,
-						},
 					},
 				},
 			},
@@ -297,7 +264,7 @@ func bucketsDescriptionAttributes(d *schema.ResourceData, buckets []ks3.BucketPr
 		// Add additional information
 		raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
 			requestInfo = ks3Client
-			return ks3Client.GetBucketInfo(bucket.Name)
+			return GetBucketInfo(ks3Client, bucket.Name)
 		})
 		if err == nil {
 			if debugOn() {
@@ -512,4 +479,24 @@ func bucketsDescriptionAttributes(d *schema.ResourceData, buckets []ks3.BucketPr
 		writeToFile(output.(string), s)
 	}
 	return nil
+}
+
+func GetBucketInfo(client *ks3.Client, bucket string) (ks3.GetBucketInfoResult, error) {
+
+	resp, err := client.ListBuckets()
+	if err == nil {
+		for _, bucketInfo := range resp.Buckets {
+			if bucketInfo.Name == bucket {
+				return ks3.GetBucketInfoResult{
+					BucketInfo: ks3.BucketInfo{
+						XMLName:      bucketInfo.XMLName,
+						Name:         bucket,
+						Location:     bucketInfo.Region,
+						ACL:          bucketInfo.Type,
+						StorageClass: bucketInfo.Type,
+					}}, nil
+			}
+		}
+	}
+	return ks3.GetBucketInfoResult{}, err
 }
