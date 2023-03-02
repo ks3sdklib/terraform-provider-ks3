@@ -92,7 +92,7 @@ func dataSourceKsyunKs3BucketObjects() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"bucket-type": {
+						"bucket_type": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -185,7 +185,7 @@ func bucketObjectsDescriptionAttributes(d *schema.ResourceData, bucketName strin
 		mapping := map[string]interface{}{
 			"key":                    object.Key,
 			"etag":                   strings.Trim(object.ETag, `"`),
-			"bucket-type":            object.StorageClass,
+			"bucket_type":            object.StorageClass,
 			"last_modification_time": object.LastModified.Format(time.RFC3339),
 		}
 

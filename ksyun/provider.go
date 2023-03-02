@@ -66,24 +66,6 @@ func Provider() terraform.ResourceProvider {
 				DefaultFunc: schema.EnvDefaultFunc("CLIENT_CONNECT_TIMEOUT", 60000),
 				Description: descriptions["client_connect_timeout"],
 			},
-			"source_ip": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				DefaultFunc: schema.EnvDefaultFunc("KSYUN_SOURCE_IP", os.Getenv("KSYUN_SOURCE_IP")),
-				Description: descriptions["source_ip"],
-			},
-			"security_transport": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				DefaultFunc: schema.EnvDefaultFunc("KSYUN_SECURITY_TRANSPORT", os.Getenv("KSYUN_SECURITY_TRANSPORT")),
-				//Deprecated:  "It has been deprecated from version 1.136.0 and using new field secure_transport instead.",
-			},
-			"secure_transport": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				DefaultFunc: schema.EnvDefaultFunc("KSYUN_SECURE_TRANSPORT", os.Getenv("KSYUN_SECURE_TRANSPORT")),
-				Description: descriptions["secure_transport"],
-			},
 			"max_retry_timeout": {
 				Type:        schema.TypeInt,
 				Optional:    true,
