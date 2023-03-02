@@ -165,15 +165,15 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 				MaxItems: 1000,
 			},
 
-			"storage_class": {
+			"bucket-type": {
 				Type:     schema.TypeString,
-				Default:  ks3.StorageStandard,
+				Default:  ks3.TypeNormal,
 				Optional: true,
 				ForceNew: true,
 				ValidateFunc: validation.StringInSlice([]string{
-					string(ks3.StorageStandard),
-					string(ks3.StorageIA),
-					string(ks3.StorageArchive),
+					string(ks3.TypeNormal),
+					string(ks3.TypeIA),
+					string(ks3.TypeArchive),
 				}, false),
 			},
 			"tags": tagsSchema(),
@@ -205,7 +205,7 @@ func resourceKsyunKs3BucketCreate(d *schema.ResourceData, meta interface{}) erro
 
 	req := Request{
 		d.Get("bucket").(string),
-		ks3.StorageClass(ks3.StorageClassType(d.Get("storage_class").(string))),
+		ks3.BucketTypeClass(ks3.BucketType(d.Get("bucket-type").(string))),
 		ks3.ACL(ks3.ACLType(d.Get("acl").(string))),
 	}
 	raw, err = client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
@@ -261,7 +261,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("intranet_endpoint", object.BucketInfo.IntranetEndpoint)
 	d.Set("location", object.BucketInfo.Location)
 	d.Set("owner", object.BucketInfo.Owner.ID)
-	d.Set("storage_class", object.BucketInfo.StorageClass)
+	d.Set("bucket-type", object.BucketInfo.StorageClass)
 	d.Set("redundancy_type", object.BucketInfo.RedundancyType)
 
 	if &object.BucketInfo.SseRule != nil {
@@ -442,7 +442,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 					e["created_before_date"] = t.Format("2006-01-02")
 				}
 				e["days"] = transition.Days
-				e["storage_class"] = string(transition.StorageClass)
+				e["bucket-type"] = string(transition.StorageClass)
 				eSli = append(eSli, e)
 			}
 			rule["transitions"] = schema.NewSet(transitionsHash, eSli)
@@ -475,7 +475,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 			for _, transition := range lifecycleRule.NonVersionTransitions {
 				e := make(map[string]interface{})
 				e["days"] = transition.NoncurrentDays
-				e["storage_class"] = string(transition.StorageClass)
+				e["bucket-type"] = string(transition.StorageClass)
 				eSli = append(eSli, e)
 			}
 			rule["noncurrent_version_transition"] = schema.NewSet(transitionsHash, eSli)
@@ -919,10 +919,10 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 
 				valCreatedBeforeDate := transition.(map[string]interface{})["created_before_date"].(string)
 				valDays := transition.(map[string]interface{})["days"].(int)
-				valStorageClass := transition.(map[string]interface{})["storage_class"].(string)
+				valStorageClass := transition.(map[string]interface{})["bucket-type"].(string)
 
 				if (valCreatedBeforeDate != "" && valDays > 0) || (valCreatedBeforeDate == "" && valDays <= 0) || (valStorageClass == "") {
-					return WrapError(Error("'CreatedBeforeDate' conflicts with 'Days'. One and only one of them can be specified in one transition configuration. 'storage_class' must be set."))
+					return WrapError(Error("'CreatedBeforeDate' conflicts with 'Days'. One and only one of them can be specified in one transition configuration. 'bucket-type' must be set."))
 				}
 
 				if valCreatedBeforeDate != "" {
@@ -977,7 +977,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 				i := ks3.LifecycleVersionTransition{}
 
 				valDays := transition.(map[string]interface{})["days"].(int)
-				valStorageClass := transition.(map[string]interface{})["storage_class"].(string)
+				valStorageClass := transition.(map[string]interface{})["bucket-type"].(string)
 
 				i.NoncurrentDays = valDays
 				i.StorageClass = ks3.StorageClassType(valStorageClass)
@@ -1256,7 +1256,7 @@ func transitionsHash(v interface{}) int {
 	if v, ok := m["created_before_date"]; ok {
 		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
 	}
-	if v, ok := m["storage_class"]; ok {
+	if v, ok := m["bucket-type"]; ok {
 		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
 	}
 	if v, ok := m["days"]; ok {

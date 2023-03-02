@@ -62,7 +62,7 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"storage_class": {
+						"bucket-type": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},

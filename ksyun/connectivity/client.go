@@ -1,9 +1,7 @@
 package connectivity
 
 import (
-	rpc "github.com/alibabacloud-go/tea-rpc/client"
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk"
-	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/wilac-pv/ksyun-ks3-go-sdk/ks3"
 
@@ -23,7 +21,6 @@ type KsyunClient struct {
 	SecurityToken  string
 	accountIdMutex sync.RWMutex
 	config         *Config
-	teaSdkConfig   rpc.Config
 	ks3conn        *ks3.Client
 }
 
@@ -57,25 +54,6 @@ func (c *Config) Client() (*KsyunClient, error) {
 		SecretKey:     secretKey,
 		SecurityToken: securityToken,
 	}, nil
-}
-
-type ks3Credentials struct {
-	client *KsyunClient
-}
-
-func (defCre *ks3Credentials) GetAccessKeyID() string {
-
-	accessKey := os.Getenv("KS3_ACCESS_KEY_ID")
-	return accessKey
-}
-
-func (defCre *ks3Credentials) GetAccessKeySecret() string {
-	secretKey := os.Getenv("KS3_ACCESS_KEY_SECRET")
-	return secretKey
-}
-
-func (defCre *ks3Credentials) GetSecurityToken() string {
-	return ""
 }
 
 func (client *KsyunClient) GetRetryTimeout(defaultTimeout time.Duration) time.Duration {
@@ -113,30 +91,6 @@ func (client *KsyunClient) WithKs3BucketByName(bucketName string, do func(*ks3.B
 		}
 		return do(bucket)
 	})
-}
-
-func (client *KsyunClient) NewTeaCommonClient(endpoint string) (*rpc.Client, error) {
-	sdkConfig := client.teaSdkConfig
-	sdkConfig.SetEndpoint(endpoint)
-
-	conn, err := rpc.NewClient(&sdkConfig)
-	if err != nil {
-		return nil, fmt.Errorf("unable to initialize the tea client: %#v", err)
-	}
-
-	return conn, nil
-}
-
-func (client *KsyunClient) NewCommonRequest(schema string) (*requests.CommonRequest, error) {
-	request := requests.NewCommonRequest()
-	request.Domain = "ks3-cn-beijing.ksyuncs.com"
-	request.Scheme = schema
-	request.SetReadTimeout(time.Duration(client.config.ClientReadTimeout) * time.Millisecond)
-	request.SetConnectTimeout(time.Duration(client.config.ClientConnectTimeout) * time.Millisecond)
-	request.AppendUserAgent(Terraform, terraformVersion)
-	request.AppendUserAgent(Provider, providerVersion)
-	request.AppendUserAgent(Module, client.config.ConfigurationSource)
-	return request, nil
 }
 
 func (client *KsyunClient) getSdkConfig() *sdk.Config {
