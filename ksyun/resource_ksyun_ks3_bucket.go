@@ -711,7 +711,6 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 
 func resourceKsyunKs3BucketDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*connectivity.KsyunClient)
-	ks3Service := Ks3Service{client}
 	var requestInfo *ks3.Client
 	raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
 		requestInfo = ks3Client
