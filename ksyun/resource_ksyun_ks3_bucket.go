@@ -766,7 +766,7 @@ func resourceKsyunKs3BucketDelete(d *schema.ResourceData, meta interface{}) erro
 	if err != nil {
 		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "DeleteBucket", KsyunKs3GoSdk)
 	}
-	return WrapError(ks3Service.WaitForKs3Bucket(d.Id(), Deleted, DefaultTimeoutMedium))
+	return nil
 }
 
 func expirationHash(v interface{}) int {
