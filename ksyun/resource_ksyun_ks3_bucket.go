@@ -722,11 +722,6 @@ func resourceKsyunKs3BucketDelete(d *schema.ResourceData, meta interface{}) erro
 	}
 	addDebug("IsBucketExist", raw, requestInfo, map[string]string{"bucketName": d.Id()})
 
-	exist, _ := raw.(bool)
-	if !exist {
-		return nil
-	}
-
 	err = resource.Retry(5*time.Minute, func() *resource.RetryError {
 		raw, err = client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
 			return nil, ks3Client.DeleteBucket(d.Id())
