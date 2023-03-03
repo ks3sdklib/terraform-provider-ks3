@@ -22,6 +22,7 @@ type KsyunClient struct {
 	accountIdMutex sync.RWMutex
 	config         *Config
 	ks3conn        *ks3.Client
+	Endpoint       string
 }
 
 const DefaultClientRetryCountSmall = 5
@@ -46,6 +47,7 @@ func (c *Config) Client() (*KsyunClient, error) {
 	secretKey := os.Getenv("KS3_ACCESS_KEY_SECRET")
 	region := os.Getenv("KS3_REGION")
 	securityToken := os.Getenv("KSYUN_SECURITY_TOKEN")
+	endpoint := os.Getenv("KS3_ENDPOINT")
 
 	return &KsyunClient{
 		config:        c,
@@ -53,6 +55,7 @@ func (c *Config) Client() (*KsyunClient, error) {
 		AccessKey:     accessKey,
 		SecretKey:     secretKey,
 		SecurityToken: securityToken,
+		Endpoint:      endpoint,
 	}, nil
 }
 
@@ -69,17 +72,14 @@ func (client *KsyunClient) GetRetryTimeout(defaultTimeout time.Duration) time.Du
 func (client *KsyunClient) WithKs3Client(do func(*ks3.Client) (interface{}, error)) (interface{}, error) {
 	goSdkMutex.Lock()
 	defer goSdkMutex.Unlock()
-
 	// Initialize the KS3 client if necessary
 	if client.ks3conn == nil {
-		endpoint := "https://ks3-cn-beijing.ksyuncs.com"
-		ks3conn, err := ks3.New(endpoint, client.AccessKey, client.SecretKey)
+		ks3conn, err := ks3.New(client.Endpoint, client.AccessKey, client.SecretKey)
 		if err != nil {
 			return nil, fmt.Errorf("unable to initialize the KS3 client: %#v", err)
 		}
 		client.ks3conn = ks3conn
 	}
-
 	return do(client.ks3conn)
 }
 
@@ -100,7 +100,7 @@ func (client *KsyunClient) getSdkConfig() *sdk.Config {
 		WithEnableAsync(false).
 		WithGoRoutinePoolSize(100).
 		WithMaxTaskQueueSize(10000).
-		WithDebug(false).
+		WithDebug(true).
 		WithHttpTransport(client.getTransport()).
 		WithScheme(client.config.Protocol)
 }

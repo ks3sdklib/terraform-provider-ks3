@@ -216,7 +216,6 @@ func resourceKsyunKs3BucketObjectRead(d *schema.ResourceData, meta interface{}) 
 	d.Set("content_encoding", object.Get("Content-Encoding"))
 	d.Set("expires", object.Get("Expires"))
 	d.Set("etag", strings.Trim(object.Get("ETag"), `"`))
-	d.Set("version_id", object.Get("x-ks3-version-id"))
 
 	return nil
 }

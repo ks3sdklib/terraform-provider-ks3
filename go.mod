@@ -2,10 +2,9 @@ module github.com/wilac-pv/terraform-provider-ks3
 
 require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1538
-	github.com/aliyun/credentials-go v1.1.2
 	github.com/hashicorp/terraform-plugin-sdk v1.17.2
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/wilac-pv/ksyun-ks3-go-sdk v1.0.9
+	github.com/wilac-pv/ksyun-ks3-go-sdk v1.0.10-0.20230303041624-858cd58e090c
 )
 
 require (
@@ -15,8 +14,6 @@ require (
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/agext/levenshtein v1.2.2 // indirect
-	github.com/alibabacloud-go/debug v0.0.0-20190504072949-9472017b5c68 // indirect
-	github.com/alibabacloud-go/tea v1.1.17 // indirect
 	github.com/apparentlymart/go-cidr v1.1.0 // indirect
 	github.com/apparentlymart/go-textseg/v12 v12.0.0 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect

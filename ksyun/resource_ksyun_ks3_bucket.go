@@ -9,7 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/wilac-pv/ksyun-ks3-go-sdk/ks3"
 	"github.com/wilac-pv/terraform-provider-ks3/ksyun/connectivity"
-	"io/ioutil"
 	"log"
 	"time"
 )
@@ -264,27 +263,6 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("bucket_type", object.BucketInfo.StorageClass)
 	d.Set("redundancy_type", object.BucketInfo.RedundancyType)
 
-	if &object.BucketInfo.SseRule != nil {
-		if len(object.BucketInfo.SseRule.SSEAlgorithm) > 0 && object.BucketInfo.SseRule.SSEAlgorithm != "None" {
-			rule := make(map[string]interface{})
-			rule["sse_algorithm"] = object.BucketInfo.SseRule.SSEAlgorithm
-			if object.BucketInfo.SseRule.KMSMasterKeyID != "" {
-				rule["kms_master_key_id"] = object.BucketInfo.SseRule.KMSMasterKeyID
-			}
-			data := make([]map[string]interface{}, 0)
-			data = append(data, rule)
-			d.Set("server_side_encryption_rule", data)
-		}
-	}
-
-	if object.BucketInfo.Versioning != "" {
-		data := map[string]interface{}{
-			"status": object.BucketInfo.Versioning,
-		}
-		versioning := make([]map[string]interface{}, 0)
-		versioning = append(versioning, data)
-		d.Set("versioning", versioning)
-	}
 	request := map[string]string{"bucketName": d.Id()}
 	var requestInfo *ks3.Client
 
@@ -320,25 +298,6 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 	if err != nil && !IsExpectedErrors(err, []string{"NoSuchWebsiteConfiguration"}) {
 		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "GetBucketWebsite", KsyunKs3GoSdk)
 	}
-	addDebug("GetBucketWebsite", raw, requestInfo, request)
-	ws, _ := raw.(ks3.GetBucketWebsiteResult)
-	websites := make([]map[string]interface{}, 0)
-	if err == nil && &ws != nil {
-		w := make(map[string]interface{})
-
-		if v := &ws.IndexDocument; v != nil {
-			w["index_document"] = v.Suffix
-		}
-
-		if v := &ws.ErrorDocument; v != nil {
-			w["error_document"] = v.Key
-		}
-		websites = append(websites, w)
-	}
-	if err := d.Set("website", websites); err != nil {
-		return WrapError(err)
-	}
-
 	// Read the logging configuration
 	raw, err = client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
 		return ks3Client.GetBucketLogging(d.Id())
@@ -364,26 +323,6 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 			if err := d.Set("logging", lgs); err != nil {
 				return WrapError(err)
 			}
-		}
-	}
-
-	// Read the bucket referer
-	raw, err = client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-		return ks3Client.GetBucketReferer(d.Id())
-	})
-	if err != nil {
-		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "GetBucketReferer", KsyunKs3GoSdk)
-	}
-	addDebug("GetBucketReferer", raw, requestInfo, request)
-	referers := make([]map[string]interface{}, 0)
-	referer, _ := raw.(ks3.GetBucketRefererResult)
-	if len(referer.RefererList) > 0 {
-		referers = append(referers, map[string]interface{}{
-			"allow_empty": referer.AllowEmptyReferer,
-			"referers":    referer.RefererList,
-		})
-		if err := d.Set("referer_config", referers); err != nil {
-			return WrapError(err)
 		}
 	}
 
@@ -487,71 +426,6 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 		return WrapError(err)
 	}
 
-	// Read Policy
-	raw, err = client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-		params := map[string]interface{}{}
-		params["policy"] = nil
-		return ks3Client.Conn.Do("GET", d.Id(), "", params, nil, nil, 0, nil)
-	})
-
-	if err != nil && !ks3NotFoundError(err) {
-		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "GetPolicyByConn", KsyunKs3GoSdk)
-	}
-	addDebug("GetPolicyByConn", raw, requestInfo, request)
-	policy := ""
-	if err == nil {
-		rawResp := raw.(*ks3.Response)
-		defer rawResp.Body.Close()
-		rawData, err := ioutil.ReadAll(rawResp.Body)
-		if err != nil {
-			return WrapError(err)
-		}
-		policy = string(rawData)
-	}
-
-	if err := d.Set("policy", policy); err != nil {
-		return WrapError(err)
-	}
-
-	// Read tags
-	raw, err = client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-		return ks3Client.GetBucketTagging(d.Id())
-	})
-
-	if err != nil {
-		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "GetBucketTagging", KsyunKs3GoSdk)
-	}
-	addDebug("GetBucketTagging", raw, requestInfo, request)
-	tagging, _ := raw.(ks3.GetBucketTaggingResult)
-	tagsMap := make(map[string]string)
-	if len(tagging.Tags) > 0 {
-		for _, t := range tagging.Tags {
-			tagsMap[t.Key] = t.Value
-		}
-	}
-	if err := d.Set("tags", tagsMap); err != nil {
-		return WrapError(err)
-	}
-
-	// Read the bucket transfer acceleration status
-	raw, err = client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-		return ks3Client.GetBucketTransferAcc(d.Id())
-	})
-	if err != nil && !ks3NotFoundError(err) && !IsExpectedErrors(err, []string{"TransferAccelerationDisabled"}) {
-		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "GetBucketTransferAcc", KsyunKs3GoSdk)
-	}
-	acc, _ := raw.(ks3.TransferAccConfiguration)
-	accMap := make([]map[string]interface{}, 0)
-	if err == nil && &acc != nil {
-		data := map[string]interface{}{
-			"enabled": acc.Enabled,
-		}
-		accMap = append(accMap, data)
-	}
-	if err := d.Set("transfer_acceleration", accMap); err != nil {
-		return WrapError(err)
-	}
-
 	return nil
 }
 
@@ -587,13 +461,6 @@ func resourceKsyunKs3BucketUpdate(d *schema.ResourceData, meta interface{}) erro
 		d.SetPartial("logging")
 	}
 
-	if d.HasChange("referer_config") {
-		if err := resourceKsyunKs3BucketRefererUpdate(client, d); err != nil {
-			return WrapError(err)
-		}
-		d.SetPartial("referer_config")
-	}
-
 	if d.HasChange("lifecycle_rule") {
 		if err := resourceKsyunKs3BucketLifecycleRuleUpdate(client, d); err != nil {
 			return WrapError(err)
@@ -601,19 +468,6 @@ func resourceKsyunKs3BucketUpdate(d *schema.ResourceData, meta interface{}) erro
 		d.SetPartial("lifecycle_rule")
 	}
 
-	if d.HasChange("policy") {
-		if err := resourceKsyunKs3BucketPolicyUpdate(client, d); err != nil {
-			return WrapError(err)
-		}
-		d.SetPartial("policy")
-	}
-
-	if d.HasChange("tags") {
-		if err := resourceKsyunKs3BucketTaggingUpdate(client, d); err != nil {
-			return WrapError(err)
-		}
-		d.SetPartial("tags")
-	}
 	d.Partial(false)
 	return resourceKsyunKs3BucketRead(d, meta)
 }
@@ -716,52 +570,6 @@ func resourceKsyunKs3BucketLoggingUpdate(client *connectivity.KsyunClient, d *sc
 		"targetBucket": target_bucket,
 		"targetPrefix": target_prefix,
 		"isEnable":     target_bucket != "",
-	})
-	return nil
-}
-
-func resourceKsyunKs3BucketRefererUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
-	config := d.Get("referer_config").([]interface{})
-	var requestInfo *ks3.Client
-	if config == nil || len(config) < 1 {
-		log.Printf("[DEBUG] KS3 set bucket referer as nil")
-		raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-			requestInfo = ks3Client
-			return nil, ks3Client.SetBucketReferer(d.Id(), nil, true)
-		})
-		if err != nil {
-			return WrapErrorf(err, DefaultErrorMsg, d.Id(), "SetBucketReferer", KsyunKs3GoSdk)
-		}
-		addDebug("SetBucketReferer", raw, requestInfo, map[string]interface{}{
-			"allowEmptyReferer": true,
-			"bucketName":        d.Id(),
-		})
-		return nil
-	}
-
-	c := config[0].(map[string]interface{})
-
-	var allow bool
-	var referers []string
-	if v, ok := c["allow_empty"]; ok {
-		allow = v.(bool)
-	}
-	if v, ok := c["referers"]; ok {
-		for _, referer := range v.([]interface{}) {
-			referers = append(referers, referer.(string))
-		}
-	}
-	raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-		requestInfo = ks3Client
-		return nil, ks3Client.SetBucketReferer(d.Id(), referers, allow)
-	})
-	if err != nil {
-		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "SetBucketReferer", KsyunKs3GoSdk)
-	}
-	addDebug("SetBucketReferer", raw, requestInfo, map[string]interface{}{
-		"bucketName":        d.Id(),
-		"referers":          referers,
-		"allowEmptyReferer": allow,
 	})
 	return nil
 }
@@ -890,33 +698,6 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			}
 			rule.AbortMultipartUpload = &i
 		}
-
-		// Noncurrent Version Expiration
-		noncurrentVersionExpiration := d.Get(fmt.Sprintf("lifecycle_rule.%d.noncurrent_version_expiration", i)).(*schema.Set).List()
-		if len(noncurrentVersionExpiration) > 0 {
-			e := noncurrentVersionExpiration[0].(map[string]interface{})
-			i := ks3.LifecycleVersionExpiration{}
-			valDays, _ := e["days"].(int)
-			i.NoncurrentDays = valDays
-			rule.NonVersionExpiration = &i
-		}
-
-		// Noncurrent Version Transitions
-		noncurrentVersionTransitions := d.Get(fmt.Sprintf("lifecycle_rule.%d.noncurrent_version_transition", i)).(*schema.Set).List()
-		if len(noncurrentVersionTransitions) > 0 {
-			for _, transition := range noncurrentVersionTransitions {
-				i := ks3.LifecycleVersionTransition{}
-
-				valDays := transition.(map[string]interface{})["days"].(int)
-				valStorageClass := transition.(map[string]interface{})["bucket_type"].(string)
-
-				i.NoncurrentDays = valDays
-				i.StorageClass = ks3.StorageClassType(valStorageClass)
-
-				rule.NonVersionTransitions = append(rule.NonVersionTransitions, i)
-			}
-		}
-
 		rules = append(rules, rule)
 	}
 
@@ -930,114 +711,6 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 	addDebug("SetBucketLifecycle", raw, requestInfo, map[string]interface{}{
 		"bucketName": bucket,
 		"rules":      rules,
-	})
-	return nil
-}
-
-func resourceKsyunKs3BucketPolicyUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
-	bucket := d.Id()
-	policy := d.Get("policy").(string)
-	var requestInfo *ks3.Client
-	if len(policy) == 0 {
-		params := map[string]interface{}{}
-		params["policy"] = nil
-		raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-			requestInfo = ks3Client
-			return ks3Client.Conn.Do("DELETE", bucket, "", params, nil, nil, 0, nil)
-		})
-		if err != nil {
-			return WrapErrorf(err, DefaultErrorMsg, d.Id(), "DeletePolicyByConn", KsyunKs3GoSdk)
-		}
-		addDebug("DeletePolicyByConn", raw, requestInfo, params)
-		return nil
-	}
-	params := map[string]interface{}{}
-	params["policy"] = nil
-	raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-		requestInfo = ks3Client
-		buffer := new(bytes.Buffer)
-		buffer.Write([]byte(policy))
-		return ks3Client.Conn.Do("PUT", bucket, "", params, nil, buffer, 0, nil)
-	})
-	if err != nil {
-		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "PutPolicyByConn", KsyunKs3GoSdk)
-	}
-	addDebug("PutPolicyByConn", raw, requestInfo, params)
-	return nil
-}
-
-func resourceKsyunKs3BucketEncryptionUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
-	encryption_rule := d.Get("server_side_encryption_rule").([]interface{})
-	var requestInfo *ks3.Client
-	if encryption_rule == nil || len(encryption_rule) == 0 {
-		raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-			requestInfo = ks3Client
-			return nil, ks3Client.DeleteBucketEncryption(d.Id())
-		})
-		if err != nil {
-			return WrapErrorf(err, DefaultErrorMsg, d.Id(), "DeleteBucketEncryption", KsyunKs3GoSdk)
-		}
-		addDebug("DeleteBucketEncryption", raw, requestInfo, map[string]string{"bucketName": d.Id()})
-		return nil
-	}
-
-	var sseRule ks3.ServerEncryptionRule
-	c := encryption_rule[0].(map[string]interface{})
-	if v, ok := c["sse_algorithm"]; ok {
-		sseRule.SSEDefault.SSEAlgorithm = v.(string)
-	}
-
-	if v, ok := c["kms_master_key_id"]; ok {
-		sseRule.SSEDefault.KMSMasterKeyID = v.(string)
-	}
-
-	raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-		requestInfo = ks3Client
-		return nil, ks3Client.SetBucketEncryption(d.Id(), sseRule)
-	})
-	if err != nil {
-		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "SetBucketEncryption", KsyunKs3GoSdk)
-	}
-	addDebug("SetBucketEncryption", raw, requestInfo, map[string]interface{}{
-		"bucketName":     d.Id(),
-		"encryptionRule": sseRule,
-	})
-	return nil
-}
-
-func resourceKsyunKs3BucketTaggingUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
-	tagsMap := d.Get("tags").(map[string]interface{})
-	var requestInfo *ks3.Client
-	if tagsMap == nil || len(tagsMap) == 0 {
-		raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-			requestInfo = ks3Client
-			return nil, ks3Client.DeleteBucketTagging(d.Id())
-		})
-		if err != nil {
-			return WrapErrorf(err, DefaultErrorMsg, d.Id(), "DeleteBucketTagging", KsyunKs3GoSdk)
-		}
-		addDebug("DeleteBucketTagging", raw, requestInfo, map[string]string{"bucketName": d.Id()})
-		return nil
-	}
-
-	// Put tagging
-	var bTagging ks3.Tagging
-	for k, v := range tagsMap {
-		bTagging.Tags = append(bTagging.Tags, ks3.Tag{
-			Key:   k,
-			Value: v.(string),
-		})
-	}
-	raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-		requestInfo = ks3Client
-		return nil, ks3Client.SetBucketTagging(d.Id(), bTagging)
-	})
-	if err != nil {
-		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "SetBucketTagging", KsyunKs3GoSdk)
-	}
-	addDebug("SetBucketTagging", raw, requestInfo, map[string]interface{}{
-		"bucketName": d.Id(),
-		"tagging":    bTagging,
 	})
 	return nil
 }
@@ -1069,31 +742,30 @@ func resourceKsyunKs3BucketDelete(d *schema.ResourceData, meta interface{}) erro
 				if d.Get("force_destroy").(bool) {
 					raw, er := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
 						bucket, _ := ks3Client.Bucket(d.Get("bucket").(string))
-						lor, err := bucket.ListObjectVersions()
-						if err != nil {
-							return nil, WrapErrorf(err, DefaultErrorMsg, d.Id(), "ListObjectVersions", KsyunKs3GoSdk)
+						marker := ""
+						retryTime := 3
+						for retryTime > 0 {
+							lsRes, err := bucket.ListObjects(ks3.Marker(marker))
+							if err != nil {
+								retryTime--
+								time.Sleep(time.Duration(1) * time.Second)
+								continue
+							}
+							for _, object := range lsRes.Objects {
+								bucket.DeleteObject(object.Key)
+							}
+							if lsRes.IsTruncated {
+								marker = lsRes.NextMarker
+							} else {
+								return true, nil
+							}
 						}
-						addDebug("ListObjectVersions", lor, requestInfo)
-						objectsToDelete := make([]ks3.DeleteObject, 0)
-						for _, object := range lor.ObjectDeleteMarkers {
-							objectsToDelete = append(objectsToDelete, ks3.DeleteObject{
-								Key:       object.Key,
-								VersionId: object.VersionId,
-							})
-						}
-
-						for _, object := range lor.ObjectVersions {
-							objectsToDelete = append(objectsToDelete, ks3.DeleteObject{
-								Key:       object.Key,
-								VersionId: object.VersionId,
-							})
-						}
-						return bucket.DeleteObjectVersions(objectsToDelete)
+						return false, nil
 					})
 					if er != nil {
 						return resource.NonRetryableError(er)
 					}
-					addDebug("DeleteObjectVersions", raw, requestInfo, map[string]string{"bucketName": d.Id()})
+					addDebug("DeleteObjects", raw, requestInfo, map[string]string{"bucketName": d.Id()})
 					return resource.RetryableError(err)
 				}
 			}

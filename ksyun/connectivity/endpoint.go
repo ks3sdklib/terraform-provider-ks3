@@ -25,7 +25,3 @@ type Product struct {
 	ProductName string `xml:"ProductName"`
 	DomainName  string `xml:"DomainName"`
 }
-
-const (
-	OpenKS3Service = "ks3-cn-beijing.ksyuncs.com"
-)
