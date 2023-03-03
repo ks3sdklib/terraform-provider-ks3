@@ -1,54 +1,76 @@
-package alicloud
+package ksyun
 
 import (
 	"fmt"
+	"github.com/wilac-pv/ksyun-ks3-go-sdk/ks3"
+	"github.com/wilac-pv/terraform-provider-ks3/ksyun/connectivity"
 	"log"
+	"os"
 	"testing"
 
-	"strings"
-	"time"
-
-	"strconv"
-
-	"github.com/aliyun/aliyun-oss-go-sdk/oss"
-	"github.com/aliyun/terraform-provider-alicloud/alicloud/connectivity"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"strconv"
+	"strings"
+	"time"
 )
 
 func init() {
-	resource.AddTestSweepers("alicloud_oss_bucket", &resource.Sweeper{
-		Name: "alicloud_oss_bucket",
-		F:    testSweepOSSBuckets,
+	resource.AddTestSweepers("ksyun_ks3_bucket", &resource.Sweeper{
+		Name: "ksyun_ks3_bucket",
+		F:    testSweepKS3Buckets,
 	})
 }
 
-func testSweepOSSBuckets(region string) error {
-	rawClient, err := sharedClientForRegion(region)
-	if err != nil {
-		return fmt.Errorf("error getting Alicloud client: %s", err)
+// sharedClientForRegion returns a common AlicloudClient setup needed for the sweeper
+// functions for a give n region
+func sharedClientForRegion() (interface{}, error) {
+	var accessKey, secretKey string
+	if accessKey = os.Getenv("KS3_ACCESS_KEY_ID"); accessKey == "" {
+		return nil, fmt.Errorf("empty KS3_ACCESS_KEY_ID")
 	}
-	client := rawClient.(*connectivity.AliyunClient)
+
+	if secretKey = os.Getenv("KS3_ACCESS_KEY_SECRET"); secretKey == "" {
+		return nil, fmt.Errorf("empty KS3_ACCESS_KEY_SECRET")
+	}
+	region := os.Getenv("KS3_REGION")
+	conf := connectivity.Config{
+		Region:    connectivity.Region(region),
+		AccessKey: accessKey,
+		SecretKey: secretKey,
+		Protocol:  "HTTP",
+	}
+	// configures a default client for the region, using the above env vars
+	client, err := conf.Client()
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func testSweepKS3Buckets(string) error {
+	rawClient, err := sharedClientForRegion()
+	if err != nil {
+		return fmt.Errorf("error getting KSYUN client: %s", err)
+	}
+	client := rawClient.(*connectivity.KsyunClient)
 
 	prefixes := []string{
 		"tf-testacc",
 		"tf-test-",
-		"test-bucket-",
-		"tf-oss-test-",
-		"tf-object-test-",
-		"test-acc-alicloud-",
 	}
 
-	var options []oss.Option
-	options = append(options, oss.MaxKeys(1000))
+	var options []ks3.Option
+	options = append(options, ks3.MaxKeys(1000))
 
-	raw, err := client.WithOssClient(func(ossClient *oss.Client) (interface{}, error) {
+	raw, err := client.WithKs3Client(func(ossClient *ks3.Client) (interface{}, error) {
 		return ossClient.ListBuckets(options...)
 	})
 	if err != nil {
 		return fmt.Errorf("Error retrieving OSS buckets: %s", err)
 	}
-	resp, _ := raw.(oss.ListBucketsResult)
+	resp, _ := raw.(ks3.ListBucketsResult)
 	sweeped := false
 
 	for _, v := range resp.Buckets {
@@ -65,13 +87,13 @@ func testSweepOSSBuckets(region string) error {
 			continue
 		}
 		sweeped = true
-		raw, err := client.WithOssClient(func(ossClient *oss.Client) (interface{}, error) {
+		raw, err := client.WithKs3Client(func(ossClient *ks3.Client) (interface{}, error) {
 			return ossClient.Bucket(name)
 		})
 		if err != nil {
 			return fmt.Errorf("Error getting bucket (%s): %#v", name, err)
 		}
-		bucket, _ := raw.(*oss.Bucket)
+		bucket, _ := raw.(*ks3.Bucket)
 		if objects, err := bucket.ListObjects(options...); err != nil {
 			log.Printf("[ERROR] Failed to list objects: %s", err)
 		} else if len(objects.Objects) > 0 {
@@ -85,7 +107,7 @@ func testSweepOSSBuckets(region string) error {
 
 		log.Printf("[INFO] Deleting OSS bucket: %s", name)
 
-		_, err = client.WithOssClient(func(ossClient *oss.Client) (interface{}, error) {
+		_, err = client.WithKs3Client(func(ossClient *ks3.Client) (interface{}, error) {
 			return nil, ossClient.DeleteBucket(name)
 		})
 		if err != nil {
@@ -98,14 +120,14 @@ func testSweepOSSBuckets(region string) error {
 	return nil
 }
 
-func TestAccAlicloudOssBucketBasic(t *testing.T) {
-	var v oss.GetBucketInfoResult
+func TestKsyunKS3BucketBasic(t *testing.T) {
+	var v ks3.GetBucketInfoResult
 
-	resourceId := "alicloud_oss_bucket.default"
-	ra := resourceAttrInit(resourceId, ossBucketBasicMap)
+	resourceId := "ksyun_ks3_bucket.default"
+	ra := resourceAttrInit(resourceId, ks3BucketBasicMap)
 
 	serviceFunc := func() interface{} {
-		return &OssService{testAccProvider.Meta().(*connectivity.AliyunClient)}
+		return &Ks3Service{testAccProvider.Meta().(*connectivity.KsyunClient)}
 	}
 	rc := resourceCheckInit(resourceId, &v, serviceFunc)
 
@@ -249,7 +271,7 @@ func TestAccAlicloudOssBucketBasic(t *testing.T) {
 				Config: testAccConfig(map[string]interface{}{
 					"logging": []map[string]interface{}{
 						{
-							"target_bucket": "${alicloud_oss_bucket.target.id}",
+							"target_bucket": "${ksyun_ks3_bucket.target.id}",
 							"target_prefix": "log/",
 						},
 					},
@@ -266,8 +288,8 @@ func TestAccAlicloudOssBucketBasic(t *testing.T) {
 						{
 							"allow_empty": "false",
 							"referers": []string{
-								"http://www.aliyun.com",
-								"https://www.aliyun.com",
+								"http://www.ksyun.com",
+								"https://www.ksyun.com",
 							},
 						},
 					},
@@ -374,17 +396,17 @@ func TestAccAlicloudOssBucketBasic(t *testing.T) {
 						"lifecycle_rule.2.prefix":                                      "path3/",
 						"lifecycle_rule.2.enabled":                                     "true",
 						"lifecycle_rule.2.transitions." + hashcode3 + ".days":          "3",
-						"lifecycle_rule.2.transitions." + hashcode3 + ".storage_class": string(oss.StorageIA),
+						"lifecycle_rule.2.transitions." + hashcode3 + ".storage_class": string(ks3.StorageIA),
 						"lifecycle_rule.2.transitions." + hashcode4 + ".days":          "30",
-						"lifecycle_rule.2.transitions." + hashcode4 + ".storage_class": string(oss.StorageArchive),
+						"lifecycle_rule.2.transitions." + hashcode4 + ".storage_class": string(ks3.StorageArchive),
 
 						"lifecycle_rule.3.id":      "rule4",
 						"lifecycle_rule.3.prefix":  "path4/",
 						"lifecycle_rule.3.enabled": "true",
 						"lifecycle_rule.3.transitions." + hashcode5 + ".created_before_date": "2023-11-11",
-						"lifecycle_rule.3.transitions." + hashcode5 + ".storage_class":       string(oss.StorageIA),
+						"lifecycle_rule.3.transitions." + hashcode5 + ".storage_class":       string(ks3.StorageIA),
 						"lifecycle_rule.3.transitions." + hashcode6 + ".created_before_date": "2023-11-10",
-						"lifecycle_rule.3.transitions." + hashcode6 + ".storage_class":       string(oss.StorageArchive),
+						"lifecycle_rule.3.transitions." + hashcode6 + ".storage_class":       string(ks3.StorageArchive),
 
 						"lifecycle_rule.4.id":      "rule5",
 						"lifecycle_rule.4.prefix":  "path5/",
@@ -508,344 +530,22 @@ func TestAccAlicloudOssBucketBasic(t *testing.T) {
 	})
 }
 
-func TestAccAlicloudOssBucketVersioning(t *testing.T) {
-	var v oss.GetBucketInfoResult
-
-	resourceId := "alicloud_oss_bucket.default"
-	ra := resourceAttrInit(resourceId, ossBucketBasicMap)
-
-	serviceFunc := func() interface{} {
-		return &OssService{testAccProvider.Meta().(*connectivity.AliyunClient)}
-	}
-	rc := resourceCheckInit(resourceId, &v, serviceFunc)
-
-	rac := resourceAttrCheckInit(rc, ra)
-
-	testAccCheck := rac.resourceAttrMapUpdateSet()
-	rand := acctest.RandIntRange(1000000, 9999999)
-	name := fmt.Sprintf("tf-testacc-bucket-%d", rand)
-	testAccConfig := resourceTestAccConfigFunc(resourceId, name, resourceOssBucketConfigDependence)
-	hashcode1 := strconv.Itoa(expirationHash(map[string]interface{}{
-		"days":                         0,
-		"date":                         "",
-		"created_before_date":          "",
-		"expired_object_delete_marker": true,
-	}))
-	hashcode2 := strconv.Itoa(expirationHash(map[string]interface{}{
-		"days": 10,
-	}))
-	hashcode3 := strconv.Itoa(transitionsHash(map[string]interface{}{
-		"days":          3,
-		"storage_class": "IA",
-	}))
-	hashcode4 := strconv.Itoa(transitionsHash(map[string]interface{}{
-		"days":          5,
-		"storage_class": "Archive",
-	}))
-	resource.Test(t, resource.TestCase{
-		PreCheck: func() {
-			testAccPreCheck(t)
-		},
-		// module name
-		IDRefreshName: resourceId,
-		Providers:     testAccProviders,
-		CheckDestroy:  rac.checkResourceDestroy(),
-		Steps: []resource.TestStep{
-			{
-				Config: testAccConfig(map[string]interface{}{
-					"bucket": name,
-				}),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheck(map[string]string{
-						"bucket": name,
-					}),
-				),
-			},
-			{
-				ResourceName:            resourceId,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"force_destroy"},
-			},
-			{
-				Config: testAccConfig(map[string]interface{}{
-					"versioning": []map[string]interface{}{
-						{
-							"status": "Enabled",
-						},
-					},
-				}),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheck(map[string]string{
-						"versioning.0.status": "Enabled",
-					}),
-				),
-			},
-			{
-				Config: testAccConfig(map[string]interface{}{
-					"versioning": []map[string]interface{}{
-						{
-							"status": "Suspended",
-						},
-					},
-				}),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheck(map[string]string{
-						"versioning.0.status": "Suspended",
-					}),
-				),
-			},
-			{
-				Config: testAccConfig(map[string]interface{}{
-					"lifecycle_rule": []map[string]interface{}{
-						{
-							"id":      "rule1",
-							"prefix":  "path1/",
-							"enabled": "true",
-							"expiration": []map[string]string{
-								{
-									"expired_object_delete_marker": "true",
-								},
-							},
-						},
-						{
-							"id":      "rule2",
-							"prefix":  "path2/",
-							"enabled": "true",
-							"noncurrent_version_expiration": []map[string]string{
-								{
-									"days": "10",
-								},
-							},
-							"noncurrent_version_transition": []map[string]string{
-								{
-									"days":          "3",
-									"storage_class": "IA",
-								},
-								{
-									"days":          "5",
-									"storage_class": "Archive",
-								},
-							},
-						},
-					},
-				}),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheck(map[string]string{
-						"lifecycle_rule.#":         "2",
-						"lifecycle_rule.0.id":      "rule1",
-						"lifecycle_rule.0.prefix":  "path1/",
-						"lifecycle_rule.0.enabled": "true",
-						"lifecycle_rule.0.expiration." + hashcode1 + ".expired_object_delete_marker": "true",
-
-						"lifecycle_rule.1.id":      "rule2",
-						"lifecycle_rule.1.prefix":  "path2/",
-						"lifecycle_rule.1.enabled": "true",
-						"lifecycle_rule.1.noncurrent_version_expiration." + hashcode2 + ".days":          "10",
-						"lifecycle_rule.1.noncurrent_version_transition." + hashcode3 + ".days":          "3",
-						"lifecycle_rule.1.noncurrent_version_transition." + hashcode3 + ".storage_class": string(oss.StorageIA),
-						"lifecycle_rule.1.noncurrent_version_transition." + hashcode4 + ".days":          "5",
-						"lifecycle_rule.1.noncurrent_version_transition." + hashcode4 + ".storage_class": string(oss.StorageArchive),
-					}),
-				),
-			},
-		},
-	})
-}
-
-func TestAccAlicloudOssBucketCheckSseRule(t *testing.T) {
-	var v oss.GetBucketInfoResult
-
-	resourceId := "alicloud_oss_bucket.default"
-	ra := resourceAttrInit(resourceId, ossBucketBasicMap)
-
-	serviceFunc := func() interface{} {
-		return &OssService{testAccProvider.Meta().(*connectivity.AliyunClient)}
-	}
-	rc := resourceCheckInit(resourceId, &v, serviceFunc)
-
-	rac := resourceAttrCheckInit(rc, ra)
-
-	testAccCheck := rac.resourceAttrMapUpdateSet()
-	rand := acctest.RandIntRange(1000000, 9999999)
-	name := fmt.Sprintf("tf-testacc-bucket-%d", rand)
-	testAccConfig := resourceTestAccConfigFunc(resourceId, name, resourceOssBucketConfigDependence)
-	resource.Test(t, resource.TestCase{
-		PreCheck: func() {
-			testAccPreCheck(t)
-		},
-		// module name
-		IDRefreshName: resourceId,
-		Providers:     testAccProviders,
-		CheckDestroy:  rac.checkResourceDestroy(),
-		Steps: []resource.TestStep{
-			{
-				Config: testAccConfig(map[string]interface{}{
-					"bucket": name,
-				}),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheck(map[string]string{
-						"bucket": name,
-					}),
-				),
-			},
-			{
-				ResourceName:            resourceId,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"force_destroy"},
-			},
-			{
-				Config: testAccConfig(map[string]interface{}{
-					"server_side_encryption_rule": []map[string]interface{}{
-						{
-							"sse_algorithm": "AES256",
-						},
-					},
-				}),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheck(map[string]string{
-						"server_side_encryption_rule.0.sse_algorithm": "AES256",
-					}),
-				),
-			},
-			{
-				Config: testAccConfig(map[string]interface{}{
-					"server_side_encryption_rule": []map[string]interface{}{
-						{
-							"sse_algorithm": "KMS",
-						},
-					},
-				}),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheck(map[string]string{
-						"server_side_encryption_rule.0.sse_algorithm":     "KMS",
-						"server_side_encryption_rule.0.kms_master_key_id": "",
-					}),
-				),
-			},
-			{
-				Config: testAccConfig(map[string]interface{}{
-					"server_side_encryption_rule": []map[string]interface{}{
-						{
-							"sse_algorithm":     "KMS",
-							"kms_master_key_id": "kms-id",
-						},
-					},
-				}),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheck(map[string]string{
-						"server_side_encryption_rule.0.sse_algorithm":     "KMS",
-						"server_side_encryption_rule.0.kms_master_key_id": "kms-id",
-					}),
-				),
-			},
-			{
-				Config: testAccConfig(map[string]interface{}{
-					"server_side_encryption_rule": REMOVEKEY,
-				}),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheck(map[string]string{
-						"server_side_encryption_rule.#":                   "0",
-						"server_side_encryption_rule.0.sse_algorithm":     REMOVEKEY,
-						"server_side_encryption_rule.0.kms_master_key_id": REMOVEKEY,
-					}),
-				),
-			},
-		},
-	})
-}
-
-func TestAccAlicloudOssBucketCheckTransferAcc(t *testing.T) {
-	var v oss.GetBucketInfoResult
-
-	resourceId := "alicloud_oss_bucket.default"
-	ra := resourceAttrInit(resourceId, ossBucketBasicMap)
-
-	serviceFunc := func() interface{} {
-		return &OssService{testAccProvider.Meta().(*connectivity.AliyunClient)}
-	}
-	rc := resourceCheckInit(resourceId, &v, serviceFunc)
-
-	rac := resourceAttrCheckInit(rc, ra)
-
-	testAccCheck := rac.resourceAttrMapUpdateSet()
-	rand := acctest.RandIntRange(1000000, 9999999)
-	name := fmt.Sprintf("tf-testacc-bucket-%d", rand)
-	testAccConfig := resourceTestAccConfigFunc(resourceId, name, resourceOssBucketConfigDependence)
-	resource.Test(t, resource.TestCase{
-		PreCheck: func() {
-			testAccPreCheck(t)
-		},
-		// module name
-		IDRefreshName: resourceId,
-		Providers:     testAccProviders,
-		CheckDestroy:  rac.checkResourceDestroy(),
-		Steps: []resource.TestStep{
-			{
-				Config: testAccConfig(map[string]interface{}{
-					"bucket": name,
-				}),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheck(map[string]string{
-						"bucket": name,
-					}),
-				),
-			},
-			{
-				ResourceName:            resourceId,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"force_destroy"},
-			},
-			{
-				Config: testAccConfig(map[string]interface{}{
-					"transfer_acceleration": []map[string]interface{}{
-						{
-							"enabled": "true",
-						},
-					},
-				}),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheck(map[string]string{
-						"transfer_acceleration.0.enabled": "true",
-					}),
-				),
-			},
-			{
-				Config: testAccConfig(map[string]interface{}{
-					"transfer_acceleration": []map[string]interface{}{
-						{
-							"enabled": "false",
-						},
-					},
-				}),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheck(map[string]string{
-						"transfer_acceleration.0.enabled": "false",
-					}),
-				),
-			},
-		},
-	})
-}
-
 func resourceOssBucketConfigDependence(name string) string {
 	return fmt.Sprintf(`
-resource "alicloud_oss_bucket" "target"{
+resource "ksyun_ks3_bucket" "target"{
 	bucket = "%s-t"
 }
 `, name)
 }
 
 func TestAccAlicloudOssBucketBasic1(t *testing.T) {
-	var v oss.GetBucketInfoResult
+	var v ks3.GetBucketInfoResult
 
-	resourceId := "alicloud_oss_bucket.default"
-	ra := resourceAttrInit(resourceId, ossBucketBasicMap)
+	resourceId := "ksyun_ks3_bucket.default"
+	ra := resourceAttrInit(resourceId, ks3BucketBasicMap)
 
 	serviceFunc := func() interface{} {
-		return &OssService{testAccProvider.Meta().(*connectivity.AliyunClient)}
+		return &Ks3Service{testAccProvider.Meta().(*connectivity.KsyunClient)}
 	}
 	rc := resourceCheckInit(resourceId, &v, serviceFunc)
 
@@ -854,7 +554,7 @@ func TestAccAlicloudOssBucketBasic1(t *testing.T) {
 	testAccCheck := rac.resourceAttrMapUpdateSet()
 	rand := acctest.RandIntRange(1000000, 9999999)
 	name := fmt.Sprintf("tf-testacc-bucket-%d", rand)
-	testAccConfig := resourceTestAccConfigFunc(resourceId, name, resourceOssBucketConfigBasic)
+	testAccConfig := resourceTestAccConfigFunc(resourceId, name, resourceKs3BucketConfigBasic)
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
@@ -886,11 +586,6 @@ func TestAccAlicloudOssBucketBasic1(t *testing.T) {
 	})
 }
 
-func resourceOssBucketConfigBasic(name string) string {
+func resourceKs3BucketConfigBasic(name string) string {
 	return fmt.Sprintf("")
-}
-
-var ossBucketBasicMap = map[string]string{
-	"creation_date":    CHECKSET,
-	"lifecycle_rule.#": "0",
 }
