@@ -29,7 +29,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 				Optional:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.StringLenBetween(3, 63),
-				Default:      resource.PrefixedUniqueId("tf-ks3-bucket-"),
+				Default:      resource.PrefixedUniqueId("ks3-bucket-"),
 			},
 
 			"acl": {
@@ -38,7 +38,11 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"private", "public-read", "public-read-write"}, false),
 			},
-
+			"force_destroy": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 			"cors_rule": {
 				Type:     schema.TypeList,
 				Optional: true,
