@@ -184,18 +184,18 @@ func resourceKsyunKs3BucketCreate(d *schema.ResourceData, meta interface{}) erro
 	client := meta.(*connectivity.KsyunClient)
 	request := map[string]string{"bucketName": d.Get("bucket").(string)}
 	var requestInfo *ks3.Client
-	raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-		requestInfo = ks3Client
-		return ks3Client.IsBucketExist(request["bucketName"])
-	})
-	if err != nil {
-		return WrapErrorf(err, DefaultErrorMsg, "ksyun_ks3_bucket", "IsBucketExist", KsyunKs3GoSdk)
-	}
-	addDebug("IsBucketExist", raw, requestInfo, request)
-	isExist, _ := raw.(bool)
-	if isExist {
-		return WrapError(Error("[ERROR] The specified bucket name: %#v is not available. The bucket namespace is shared by all users of the KS3 system. Please select a different name and try again.", request["bucketName"]))
-	}
+	//raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
+	//	requestInfo = ks3Client
+	//	return ks3Client.IsBucketExist(request["bucketName"])
+	//})
+	//if err != nil {
+	//	return WrapErrorf(err, DefaultErrorMsg, "ksyun_ks3_bucket", "IsBucketExist", KsyunKs3GoSdk)
+	//}
+	//addDebug("IsBucketExist", raw, requestInfo, request)
+	//isExist, _ := raw.(bool)
+	//if isExist {
+	//	return WrapError(Error("[ERROR] The specified bucket name: %#v is not available. The bucket namespace is shared by all users of the KS3 system. Please select a different name and try again.", request["bucketName"]))
+	//}
 	type Request struct {
 		BucketName         string
 		StorageClassOption ks3.Option
@@ -207,32 +207,32 @@ func resourceKsyunKs3BucketCreate(d *schema.ResourceData, meta interface{}) erro
 		ks3.BucketTypeClass(ks3.BucketType(d.Get("bucket_type").(string))),
 		ks3.ACL(ks3.ACLType(d.Get("acl").(string))),
 	}
-	raw, err = client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
+	raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
 		return nil, ks3Client.CreateBucket(req.BucketName, req.StorageClassOption, req.AclTypeOption)
 	})
 	if err != nil {
 		return WrapErrorf(err, DefaultErrorMsg, "ksyun_ks3_bucket", "CreateBucket", KsyunKs3GoSdk)
 	}
 	addDebug("CreateBucket", raw, requestInfo, req)
-	err = resource.Retry(3*time.Minute, func() *resource.RetryError {
-		raw, err = client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-			return ks3Client.IsBucketExist(request["bucketName"])
-		})
-
-		if err != nil {
-			return resource.NonRetryableError(err)
-		}
-		isExist, _ := raw.(bool)
-		if !isExist {
-			return resource.RetryableError(Error("Trying to ensure new KS3 bucket %#v has been created successfully.", request["bucketName"]))
-		}
-		addDebug("IsBucketExist", raw, requestInfo, request)
-		return nil
-	})
-
-	if err != nil {
-		return WrapErrorf(err, DefaultErrorMsg, "ksyun_ks3_bucket", "IsBucketExist", KsyunKs3GoSdk)
-	}
+	//err = resource.Retry(3*time.Minute, func() *resource.RetryError {
+	//	raw, err = client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
+	//		return ks3Client.IsBucketExist(request["bucketName"])
+	//	})
+	//
+	//	if err != nil {
+	//		return resource.NonRetryableError(err)
+	//	}
+	//	isExist, _ := raw.(bool)
+	//	if !isExist {
+	//		return resource.RetryableError(Error("Trying to ensure new KS3 bucket %#v has been created successfully.", request["bucketName"]))
+	//	}
+	//	addDebug("IsBucketExist", raw, requestInfo, request)
+	//	return nil
+	//})
+	//
+	//if err != nil {
+	//	return WrapErrorf(err, DefaultErrorMsg, "ksyun_ks3_bucket", "IsBucketExist", KsyunKs3GoSdk)
+	//}
 
 	// Assign the bucket name as the resource ID
 	d.SetId(request["bucketName"])
@@ -256,12 +256,9 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 
 	d.Set("acl", object.BucketInfo.ACL)
 	d.Set("creation_date", object.BucketInfo.CreationDate.Format("2006-01-02"))
-	d.Set("extranet_endpoint", object.BucketInfo.ExtranetEndpoint)
-	d.Set("intranet_endpoint", object.BucketInfo.IntranetEndpoint)
 	d.Set("location", object.BucketInfo.Location)
 	d.Set("owner", object.BucketInfo.Owner.ID)
 	d.Set("bucket_type", object.BucketInfo.StorageClass)
-	d.Set("redundancy_type", object.BucketInfo.RedundancyType)
 
 	request := map[string]string{"bucketName": d.Id()}
 	var requestInfo *ks3.Client
@@ -291,13 +288,6 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 		return WrapError(err)
 	}
 
-	// Read the website configuration
-	raw, err = client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-		return ks3Client.GetBucketWebsite(d.Id())
-	})
-	if err != nil && !IsExpectedErrors(err, []string{"NoSuchWebsiteConfiguration"}) {
-		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "GetBucketWebsite", KsyunKs3GoSdk)
-	}
 	// Read the logging configuration
 	raw, err = client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
 		return ks3Client.GetBucketLogging(d.Id())
