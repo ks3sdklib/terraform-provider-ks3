@@ -4,7 +4,7 @@ require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1538
 	github.com/hashicorp/terraform-plugin-sdk v1.17.2
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/wilac-pv/ksyun-ks3-go-sdk v1.0.10-0.20230303041624-858cd58e090c
+	github.com/wilac-pv/ksyun-ks3-go-sdk v1.0.10-0.20230303102928-d2f1e64012b1
 )
 
 require (
@@ -91,4 +91,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
+//replace (
+//	github.com/wilac-pv/ksyun-ks3-go-sdk v1.0.9 => /Users/cqc/data/2022/ksyun-ks3-go-sdk
+//)
 go 1.18
