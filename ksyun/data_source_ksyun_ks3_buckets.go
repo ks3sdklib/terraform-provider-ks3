@@ -5,7 +5,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/wilac-pv/ksyun-ks3-go-sdk/ks3"
 	"github.com/wilac-pv/terraform-provider-ks3/ksyun/connectivity"
-	"io/ioutil"
 	"log"
 	"regexp"
 	"time"
@@ -46,19 +45,7 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"extranet_endpoint": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"intranet_endpoint": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
 						"location": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"owner": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -120,26 +107,6 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 							},
 							MaxItems: 1,
 						},
-
-						"referer_config": {
-							Type:     schema.TypeList,
-							Computed: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"allow_empty": {
-										Type:     schema.TypeBool,
-										Computed: true,
-									},
-									"referers": {
-										Type:     schema.TypeList,
-										Computed: true,
-										Elem:     &schema.Schema{Type: schema.TypeString},
-									},
-								},
-							},
-							MaxItems: 1,
-						},
-
 						"lifecycle_rule": {
 							Type:     schema.TypeList,
 							Computed: true,
@@ -149,9 +116,10 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 										Type:     schema.TypeString,
 										Computed: true,
 									},
-									"prefix": {
-										Type:     schema.TypeString,
-										Computed: true,
+									"filter": {
+										Type:     schema.TypeSet,
+										Computed: false,
+										MaxItems: 1,
 									},
 									"enabled": {
 										Type:     schema.TypeBool,
@@ -174,13 +142,36 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 										},
 										MaxItems: 1,
 									},
+									"transitions": {
+										Type:     schema.TypeSet,
+										Optional: true,
+										Set:      transitionsHash,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"created_before_date": {
+													Type:         schema.TypeString,
+													Optional:     true,
+													ValidateFunc: validateKs3BucketDateTimestamp,
+												},
+												"days": {
+													Type:     schema.TypeInt,
+													Optional: true,
+												},
+												"storage_class": {
+													Type:     schema.TypeString,
+													Default:  ks3.StorageStandard,
+													Optional: true,
+													ValidateFunc: validation.StringInSlice([]string{
+														string(ks3.StorageStandard),
+														string(ks3.StorageIA),
+														string(ks3.StorageArchive),
+													}, false),
+												},
+											},
+										},
+									},
 								},
 							},
-						},
-
-						"policy": {
-							Type:     schema.TypeString,
-							Optional: true,
 						},
 					},
 				},
@@ -292,17 +283,6 @@ func bucketsDescriptionAttributes(d *schema.ResourceData, buckets []ks3.BucketPr
 			}
 			mapping["server_side_encryption_rule"] = sseconfig
 
-			//Add versioning information
-			var versioning []map[string]interface{}
-			if response.BucketInfo.Versioning != "" {
-				data := map[string]interface{}{
-					"status": response.BucketInfo.Versioning,
-				}
-				versioning = make([]map[string]interface{}, 0)
-				versioning = append(versioning, data)
-			}
-			mapping["versioning"] = versioning
-
 		} else {
 			log.Printf("[WARN] Unable to get additional information for the bucket %s: %v", bucket.Name, err)
 		}
@@ -354,27 +334,6 @@ func bucketsDescriptionAttributes(d *schema.ResourceData, buckets []ks3.BucketPr
 		}
 		mapping["logging"] = loggingMappings
 
-		// Add referer information
-		var refererMappings []map[string]interface{}
-		raw, err = client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-			requestInfo = ks3Client
-			return ks3Client.GetBucketReferer(bucket.Name)
-		})
-		if err == nil {
-			if debugOn() {
-				addDebug("GetBucketReferer", raw, requestInfo, map[string]string{"bucketName": bucket.Name})
-			}
-			referer, _ := raw.(ks3.GetBucketRefererResult)
-			refererMapping := map[string]interface{}{
-				"allow_empty": referer.AllowEmptyReferer,
-				"referers":    referer.RefererList,
-			}
-			refererMappings = append(refererMappings, refererMapping)
-		} else {
-			log.Printf("[WARN] Unable to get referer information for the bucket %s: %v", bucket.Name, err)
-		}
-		mapping["referer_config"] = refererMappings
-
 		// Add lifecycle information
 		var lifecycleRuleMappings []map[string]interface{}
 		raw, err = client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
@@ -390,17 +349,16 @@ func bucketsDescriptionAttributes(d *schema.ResourceData, buckets []ks3.BucketPr
 				for _, lifecycleRule := range lifecycle.Rules {
 					ruleMapping := make(map[string]interface{})
 					ruleMapping["id"] = lifecycleRule.ID
-					ruleMapping["prefix"] = lifecycleRule.Prefix
+					ruleMapping["filter"] = lifecycleRule.Filter
 					if LifecycleRuleStatus(lifecycleRule.Status) == ExpirationStatusEnabled {
 						ruleMapping["enabled"] = true
 					} else {
 						ruleMapping["enabled"] = false
 					}
-
 					// Expiration
 					expirationMapping := make(map[string]interface{})
 					if lifecycleRule.Expiration.Date != "" {
-						t, err := time.Parse("2006-01-02T15:04:05.000Z", lifecycleRule.Expiration.Date)
+						t, err := time.Parse("2006-01-02T00:00:00+08:00", lifecycleRule.Expiration.Date)
 						if err != nil {
 							return WrapError(err)
 						}
@@ -417,50 +375,6 @@ func bucketsDescriptionAttributes(d *schema.ResourceData, buckets []ks3.BucketPr
 			log.Printf("[WARN] Unable to get lifecycle information for the bucket %s: %v", bucket.Name, err)
 		}
 		mapping["lifecycle_rule"] = lifecycleRuleMappings
-
-		// Add policy information
-		var policy string
-		raw, err = client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-			requestInfo = ks3Client
-			params := map[string]interface{}{}
-			params["policy"] = nil
-			return ks3Client.Conn.Do("GET", bucket.Name, "", params, nil, nil, 0, nil)
-		})
-
-		if err == nil {
-			if debugOn() {
-				addDebug("GetPolicyByConn", raw, requestInfo, map[string]string{"bucketName": bucket.Name})
-			}
-			rawResp := raw.(*ks3.Response)
-			rawData, err := ioutil.ReadAll(rawResp.Body)
-			if err != nil {
-				return WrapError(err)
-			}
-			policy = string(rawData)
-		} else {
-			log.Printf("[WARN] Unable to get policy information for the bucket %s: %v", bucket.Name, err)
-		}
-		mapping["policy"] = policy
-
-		// Add tags information
-		tagsMap := make(map[string]string)
-		raw, err = client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-			requestInfo = ks3Client
-			return ks3Client.GetBucketTagging(bucket.Name)
-		})
-		if err == nil {
-			if debugOn() {
-				addDebug("GetBucketTagging", raw, requestInfo, map[string]string{"bucketName": bucket.Name})
-			}
-			tagging, _ := raw.(ks3.GetBucketTaggingResult)
-			for _, t := range tagging.Tags {
-				tagsMap[t.Key] = t.Value
-			}
-		} else {
-			log.Printf("[WARN] Unable to get tagging information for the bucket %s: %v", bucket.Name, err)
-		}
-		mapping["tags"] = tagsMap
-
 		ids = append(ids, bucket.Name)
 		s = append(s, mapping)
 		names = append(names, bucket.Name)
