@@ -182,7 +182,6 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"tags": tagsSchemaComputed(),
 					},
 				},
 			},

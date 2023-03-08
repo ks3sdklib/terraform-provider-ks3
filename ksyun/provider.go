@@ -1,7 +1,6 @@
 package ksyun
 
 import (
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"os"
 	"strings"
@@ -92,10 +91,6 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		region = DEFAULT_REGION
 	}
 	securityToken := os.Getenv("KSYUN_SECURITY_TOKEN")
-
-	fmt.Println(fmt.Sprintf("accessKey=%s", accessKey))
-	fmt.Println(fmt.Sprintf("secretKey=%s", accessKey))
-	fmt.Println(fmt.Sprintf("securityToken=%s", securityToken))
 	config := &connectivity.Config{
 		AccessKey:     strings.TrimSpace(accessKey),
 		SecretKey:     strings.TrimSpace(secretKey),

@@ -31,32 +31,6 @@ func (s *Ks3Service) DescribeKs3Bucket(id string) (response ks3.GetBucketInfoRes
 	return
 }
 
-func (s *Ks3Service) WaitForKs3Bucket(id string, status Status, timeout int) error {
-	deadline := time.Now().Add(time.Duration(timeout) * time.Second)
-	for {
-		object, err := s.DescribeKs3Bucket(id)
-		if err != nil {
-			if NotFoundError(err) {
-				if status == Deleted {
-					return nil
-				}
-				// for delete bucket replication
-			} else if status == Deleted && IsExpectedErrors(err, []string{"AccessDenied"}) {
-				return nil
-			} else {
-				return WrapError(err)
-			}
-		}
-
-		if object.BucketInfo.Name != "" && status != Deleted {
-			return nil
-		}
-		if time.Now().After(deadline) {
-			return WrapErrorf(err, WaitTimeoutMsg, id, GetFunc(1), timeout, object.BucketInfo.Name, status, ProviderERROR)
-		}
-	}
-}
-
 func (s *Ks3Service) WaitForKs3BucketObject(bucket *ks3.Bucket, id string, status Status, timeout int) error {
 	deadline := time.Now().Add(time.Duration(timeout) * time.Second)
 	for {

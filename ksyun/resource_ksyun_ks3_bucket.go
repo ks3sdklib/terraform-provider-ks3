@@ -179,7 +179,6 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 					string(ks3.TypeArchive),
 				}, false),
 			},
-			"tags": tagsSchema(),
 		},
 	}
 }
