@@ -117,7 +117,7 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 										Computed: true,
 									},
 									"filter": {
-										Type:     schema.TypeSet,
+										Type:     schema.TypeList,
 										Computed: false,
 										MaxItems: 1,
 									},
@@ -402,10 +402,11 @@ func GetBucketInfo(client *ks3.Client, bucket string) (ks3.GetBucketInfoResult, 
 			if bucketInfo.Name == bucket {
 				return ks3.GetBucketInfoResult{
 					BucketInfo: ks3.BucketInfo{
-						XMLName:      bucketInfo.XMLName,
-						Name:         bucket,
-						Location:     bucketInfo.Region,
-						ACL:          bucketInfo.Type,
+						XMLName:  bucketInfo.XMLName,
+						Name:     bucket,
+						Location: bucketInfo.Region,
+						//GET BUCKETACL
+						//ACL:          bucketInfo.Type,
 						StorageClass: bucketInfo.Type,
 					}}, nil
 			}

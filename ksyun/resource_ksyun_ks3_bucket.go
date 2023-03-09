@@ -114,7 +114,8 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 						},
 						"filter": {
 							Type:     schema.TypeSet,
-							Optional: true,
+							Optional: false,
+							Set:      filterHash,
 							Default:  "",
 						},
 						"enabled": {
@@ -630,6 +631,21 @@ func resourceKsyunKs3BucketDelete(d *schema.ResourceData, meta interface{}) erro
 		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "DeleteBucket", KsyunKs3GoSdk)
 	}
 	return nil
+}
+
+func filterHash(v interface{}) int {
+	var buf bytes.Buffer
+	m := v.(map[string]interface{})
+	if v, ok := m["prefix"]; ok {
+		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
+	}
+	if v, ok := m["and"]; ok {
+		buf.WriteString(fmt.Sprintf("%d-", v.(string)))
+	}
+	if v, ok := m["tag"]; ok {
+		buf.WriteString(fmt.Sprintf("%v-", v.(string)))
+	}
+	return hashcode.String(buf.String())
 }
 
 func expirationHash(v interface{}) int {

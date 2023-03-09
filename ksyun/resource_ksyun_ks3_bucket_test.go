@@ -175,14 +175,6 @@ func TestKsyunKS3BucketBasic(t *testing.T) {
 		"created_before_date":          "2018-01-12",
 		"expired_object_delete_marker": false,
 	}))
-	hashcode8 := strconv.Itoa(abortMultipartUploadHash(map[string]interface{}{
-		"days":                0,
-		"created_before_date": "2018-01-22",
-	}))
-	hashcode9 := strconv.Itoa(abortMultipartUploadHash(map[string]interface{}{
-		"days":                10,
-		"created_before_date": "",
-	}))
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
@@ -411,13 +403,11 @@ func TestKsyunKS3BucketBasic(t *testing.T) {
 						"lifecycle_rule.4.id":      "rule5",
 						"lifecycle_rule.4.prefix":  "path5/",
 						"lifecycle_rule.4.enabled": "true",
-						"lifecycle_rule.4.expiration." + hashcode7 + ".created_before_date":             "2018-01-12",
-						"lifecycle_rule.4.abort_multipart_upload." + hashcode8 + ".created_before_date": "2018-01-22",
+						"lifecycle_rule.4.expiration." + hashcode7 + ".created_before_date": "2018-01-12",
 
 						"lifecycle_rule.5.id":      "rule6",
 						"lifecycle_rule.5.prefix":  "path6/",
 						"lifecycle_rule.5.enabled": "true",
-						"lifecycle_rule.5.abort_multipart_upload." + hashcode9 + ".days": "10",
 					}),
 				),
 			},
@@ -511,13 +501,11 @@ func TestKsyunKS3BucketBasic(t *testing.T) {
 						"lifecycle_rule.4.id":      REMOVEKEY,
 						"lifecycle_rule.4.prefix":  REMOVEKEY,
 						"lifecycle_rule.4.enabled": REMOVEKEY,
-						"lifecycle_rule.4.expiration." + hashcode7 + ".created_before_date":             REMOVEKEY,
-						"lifecycle_rule.4.abort_multipart_upload." + hashcode8 + ".created_before_date": REMOVEKEY,
+						"lifecycle_rule.4.expiration." + hashcode7 + ".created_before_date": REMOVEKEY,
 
 						"lifecycle_rule.5.id":      REMOVEKEY,
 						"lifecycle_rule.5.prefix":  REMOVEKEY,
 						"lifecycle_rule.5.enabled": REMOVEKEY,
-						"lifecycle_rule.5.abort_multipart_upload." + hashcode9 + ".days": REMOVEKEY,
 
 						"tags.%":           "0",
 						"tags.key1-update": REMOVEKEY,
@@ -538,7 +526,7 @@ resource "ksyun_ks3_bucket" "target"{
 `, name)
 }
 
-func TestAccAlicloudOssBucketBasic1(t *testing.T) {
+func TestAccKS3BucketBasic1(t *testing.T) {
 	var v ks3.GetBucketInfoResult
 
 	resourceId := "ksyun_ks3_bucket.default"
