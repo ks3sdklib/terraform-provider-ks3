@@ -116,53 +116,43 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-						//"filter": {
-						//	Type:     schema.TypeSet,
-						//	Optional: true,
-						//	MaxItems: 1,
-						//	Set:      filterHash,
-						//	Elem: &schema.Resource{
-						//		Schema: map[string]*schema.Schema{
-						//			"And": {
-						//				Type:     schema.TypeSet,
-						//				Optional: true,
-						//				Elem: &schema.Resource{
-						//					Schema: map[string]*schema.Schema{
-						//						"prefix": {
-						//							Type:     schema.TypeString,
-						//							Optional: true,
-						//						},
-						//						"tag": {
-						//							Type:     schema.TypeList,
-						//							Optional: true,
-						//							Elem: &schema.Resource{
-						//								Schema: map[string]*schema.Schema{
-						//									"key": {
-						//										Type:     schema.TypeString,
-						//										Optional: true,
-						//									},
-						//									"value": {
-						//										Type:     schema.TypeString,
-						//										Optional: true,
-						//									},
-						//								},
-						//							},
-						//						},
-						//					},
-						//				},
-						//			},
-						//		},
-						//	},
-						//},
 						"filter": {
-							Type: schema.TypeMap,
-							Elem: &schema.Schema{
-								Type: schema.TypeMap,
-								Elem: &schema.Schema{
-									Type: schema.TypeString,
+							Type:     schema.TypeSet,
+							Optional: true,
+							MaxItems: 1,
+							Set:      filterHash,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"And": {
+										Type:     schema.TypeSet,
+										Optional: true,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"prefix": {
+													Type:     schema.TypeString,
+													Optional: true,
+												},
+												"tag": {
+													Type:     schema.TypeList,
+													Optional: true,
+													Elem: &schema.Resource{
+														Schema: map[string]*schema.Schema{
+															"key": {
+																Type:     schema.TypeString,
+																Optional: true,
+															},
+															"value": {
+																Type:     schema.TypeString,
+																Optional: true,
+															},
+														},
+													},
+												},
+											},
+										},
+									},
 								},
 							},
-							Optional: true,
 						},
 						"enabled": {
 							Type:     schema.TypeBool,
@@ -561,7 +551,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		}
 		// filter
 		filter := d.Get("filter").(map[string]interface{})
-		if len(filter) > 0 {
+		if filter != nil && len(filter) > 0 {
 			i := ks3.LifecycleFilter{
 				And: ks3.LifecycleAnd{},
 			}

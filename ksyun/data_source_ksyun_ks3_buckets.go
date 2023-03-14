@@ -117,14 +117,46 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 										Computed: true,
 									},
 									"filter": {
-										Type: schema.TypeMap,
-										Elem: &schema.Schema{
-											Type: schema.TypeMap,
-											Elem: &schema.Schema{
-												Type: schema.TypeString,
+										Type:     schema.TypeSet,
+										Optional: true,
+										MaxItems: 1,
+										Set:      filterHash,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"And": {
+													Type:     schema.TypeSet,
+													Optional: true,
+													Elem: &schema.Resource{
+														Schema: map[string]*schema.Schema{
+															"prefix": {
+																Type:     schema.TypeString,
+																Optional: true,
+															},
+															"tag": {
+																Type:     schema.TypeList,
+																Optional: true,
+																Elem: &schema.Resource{
+																	Schema: map[string]*schema.Schema{
+																		"key": {
+																			Type:     schema.TypeString,
+																			Optional: true,
+																		},
+																		"value": {
+																			Type:     schema.TypeString,
+																			Optional: true,
+																		},
+																	},
+																},
+															},
+														},
+													},
+												},
+												"prefix": {
+													Type:     schema.TypeString,
+													Optional: true,
+												},
 											},
 										},
-										Optional: true,
 									},
 									"enabled": {
 										Type:     schema.TypeBool,
