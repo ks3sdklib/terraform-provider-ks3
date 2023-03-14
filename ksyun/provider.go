@@ -71,9 +71,8 @@ func Provider() terraform.ResourceProvider {
 			"ksyun_ks3_buckets":        dataSourceKsyunKs3Buckets(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"ksyun_ks3_bucket":             resourceKsyunKs3Bucket(),
-			"ksyun_ks3_bucket_object":      resourceKsyunKs3BucketObject(),
-			"ksyun_ks3_bucket_replication": resourceKsyunKs3BucketReplication(),
+			"ksyun_ks3_bucket":        resourceKsyunKs3Bucket(),
+			"ksyun_ks3_bucket_object": resourceKsyunKs3BucketObject(),
 		},
 
 		ConfigureFunc: providerConfigure,
