@@ -550,11 +550,11 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			rule.Status = string(ExpirationStatusDisabled)
 		}
 		// filter
-		filter := d.Get("filter").(map[string]interface{})
-		if filter != nil && len(filter) > 0 {
-			i := ks3.LifecycleFilter{
-				And: ks3.LifecycleAnd{},
-			}
+		i := ks3.LifecycleFilter{
+			And: ks3.LifecycleAnd{},
+		}
+		filter, ok := d.Get("filter").(map[string]interface{})
+		if ok {
 			//case【1】: and有值的时候
 			and, ok := filter["and"].(map[string]interface{})
 			if ok {
@@ -572,6 +572,8 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 				i.And.Prefix, _ = filter["prefix"].(string)
 			}
 			rule.Filter = &i
+		} else {
+			i.And.Prefix, _ = filter["prefix"].(string)
 		}
 
 		// Expiration
