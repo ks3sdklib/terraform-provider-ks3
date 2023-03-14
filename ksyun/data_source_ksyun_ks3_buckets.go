@@ -117,10 +117,14 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 										Computed: true,
 									},
 									"filter": {
-										Type:     schema.TypeSet,
+										Type: schema.TypeMap,
+										Elem: &schema.Schema{
+											Type: schema.TypeMap,
+											Elem: &schema.Schema{
+												Type: schema.TypeString,
+											},
+										},
 										Optional: true,
-										MaxItems: 1,
-										Set:      filterHash,
 									},
 									"enabled": {
 										Type:     schema.TypeBool,

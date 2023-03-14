@@ -112,11 +112,57 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 							Computed:     true,
 							ValidateFunc: validation.StringLenBetween(0, 255),
 						},
+						"prefix": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						//"filter": {
+						//	Type:     schema.TypeSet,
+						//	Optional: true,
+						//	MaxItems: 1,
+						//	Set:      filterHash,
+						//	Elem: &schema.Resource{
+						//		Schema: map[string]*schema.Schema{
+						//			"And": {
+						//				Type:     schema.TypeSet,
+						//				Optional: true,
+						//				Elem: &schema.Resource{
+						//					Schema: map[string]*schema.Schema{
+						//						"prefix": {
+						//							Type:     schema.TypeString,
+						//							Optional: true,
+						//						},
+						//						"tag": {
+						//							Type:     schema.TypeList,
+						//							Optional: true,
+						//							Elem: &schema.Resource{
+						//								Schema: map[string]*schema.Schema{
+						//									"key": {
+						//										Type:     schema.TypeString,
+						//										Optional: true,
+						//									},
+						//									"value": {
+						//										Type:     schema.TypeString,
+						//										Optional: true,
+						//									},
+						//								},
+						//							},
+						//						},
+						//					},
+						//				},
+						//			},
+						//		},
+						//	},
+						//},
 						"filter": {
-							Type:     schema.TypeSet,
+							Type: schema.TypeMap,
+							Elem: &schema.Schema{
+								Type: schema.TypeMap,
+								Elem: &schema.Schema{
+									Type: schema.TypeString,
+								},
+							},
 							Optional: true,
-							MaxItems: 1,
-							Set:      filterHash,
 						},
 						"enabled": {
 							Type:     schema.TypeBool,
@@ -662,6 +708,14 @@ func filterHash(v interface{}) int {
 	m := v.(map[string]interface{})
 	if v, ok := m["prefix"]; ok {
 		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
+	} else {
+		if v, ok := m["And"]; ok {
+			buf.WriteString(fmt.Sprintf("%s-", v.(string)))
+			//if v, ok := v["And"]; ok {
+			//	buf.WriteString(fmt.Sprintf("%s-", v.(string)))
+			//}
+		}
+
 	}
 	return hashcode.String(buf.String())
 }
