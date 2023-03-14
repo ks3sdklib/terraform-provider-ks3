@@ -113,9 +113,9 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 							ValidateFunc: validation.StringLenBetween(0, 255),
 						},
 						"filter": {
-							Type:    schema.TypeSet,
-							Default: "",
-							Set:     filterHash,
+							Type:     schema.TypeSet,
+							Optional: true,
+							Set:      filterHash,
 						},
 						"enabled": {
 							Type:     schema.TypeBool,
