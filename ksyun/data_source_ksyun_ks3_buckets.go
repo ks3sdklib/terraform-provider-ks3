@@ -49,7 +49,7 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"bucket_type": {
+						"storage_class": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -117,7 +117,7 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 										Computed: true,
 									},
 									"filter": {
-										Type:     schema.TypeList,
+										Type:     schema.TypeSet,
 										Computed: false,
 										MaxItems: 1,
 									},
@@ -265,7 +265,6 @@ func bucketsDescriptionAttributes(d *schema.ResourceData, buckets []ks3.BucketPr
 			mapping["extranet_endpoint"] = response.BucketInfo.ExtranetEndpoint
 			mapping["intranet_endpoint"] = response.BucketInfo.IntranetEndpoint
 			mapping["owner"] = response.BucketInfo.Owner.ID
-			mapping["redundancy_type"] = response.BucketInfo.RedundancyType
 
 			//Add ServerSideEncryption information
 			var sseconfig []map[string]interface{}
@@ -402,9 +401,9 @@ func GetBucketInfo(client *ks3.Client, bucket string) (ks3.GetBucketInfoResult, 
 			if bucketInfo.Name == bucket {
 				return ks3.GetBucketInfoResult{
 					BucketInfo: ks3.BucketInfo{
-						XMLName:  bucketInfo.XMLName,
-						Name:     bucket,
-						Location: bucketInfo.Region,
+						XMLName: bucketInfo.XMLName,
+						Name:    bucket,
+						Region:  bucketInfo.Region,
 						//GET BUCKETACL
 						//ACL:          bucketInfo.Type,
 						StorageClass: bucketInfo.Type,

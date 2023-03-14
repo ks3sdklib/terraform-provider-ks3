@@ -17,7 +17,6 @@ const (
 	InstanceNotFound        = "Instance.Notfound"
 	MessageInstanceNotFound = "instance is not found"
 	Throttling              = "Throttling"
-	ThrottlingUser          = "Throttling.User"
 
 	// RAM Instance Not Found
 	RamInstanceNotFound = "Forbidden.InstanceNotFound"
@@ -42,12 +41,6 @@ func (err *ProviderError) Message() string {
 	return err.message
 }
 
-func GetNotFoundErrorFromString(str string) error {
-	return &ProviderError{
-		errorCode: InstanceNotFound,
-		message:   str,
-	}
-}
 func NotFoundError(err error) bool {
 	if err == nil {
 		return false
@@ -190,21 +183,8 @@ func WrapComplexError(cause, err error, filepath string, fileline int) error {
 
 // A default message of ComplexError's Err. It is format to Resource <resource-id> <operation> Failed!!! <error source>
 const DefaultErrorMsg = "Resource %s %s Failed!!! %s"
-const ResponseCodeMsg = "Resource %s %s Failed!!! %v"
 const RequestIdMsg = "RequestId: %s"
 const NotFoundMsg = ResourceNotfound + "!!! %s"
-const NotFoundWithResponse = ResourceNotfound + "!!! Response: %v"
-const DefaultTimeoutMsg = "Resource %s %s Timeout!!! %s"
-const DeleteTimeoutMsg = "Resource %s Still Exists. %s Timeout!!! %s"
 const WaitTimeoutMsg = "Resource %s %s Timeout In %d Seconds. Got: %s Expected: %s !!! %s"
 const DataDefaultErrorMsg = "Datasource %s %s Failed!!! %s"
-const SweepDefaultErrorMsg = "Sweep %s %s Failed!!!"
-const IdMsg = "Resource id：%s "
-const FailedGetAttributeMsg = "Getting resource %s attribute by path %s failed!!! Body: %v."
-
 const DefaultDebugMsg = "\n*************** %s Response *************** \n%s\n%s******************************\n\n"
-const FailedToReachTargetStatus = "Failed to reach target status. Last status: %s."
-const FailedToReachTargetStatusWithResponse = FailedToReachTargetStatus + " Response: %s"
-const FailedToReachTargetStatusWithRequestId = FailedToReachTargetStatus + " Last RequestId: %s."
-const FailedToReachTargetAttribute = "Failed to reach value for target attribute. Current value is %s."
-const RequiredWhenMsg = "attribute '%s' is required when '%s' is %v"

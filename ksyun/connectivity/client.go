@@ -15,14 +15,13 @@ import (
 )
 
 type KsyunClient struct {
-	Region         Region
-	AccessKey      string
-	SecretKey      string
-	SecurityToken  string
-	accountIdMutex sync.RWMutex
-	config         *Config
-	ks3conn        *ks3.Client
-	Endpoint       string
+	Region        Region
+	AccessKey     string
+	SecretKey     string
+	SecurityToken string
+	config        *Config
+	ks3conn       *ks3.Client
+	Endpoint      string
 }
 
 const DefaultClientRetryCountSmall = 5

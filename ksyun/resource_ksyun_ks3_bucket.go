@@ -113,10 +113,9 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 							ValidateFunc: validation.StringLenBetween(0, 255),
 						},
 						"filter": {
-							Type:     schema.TypeSet,
-							Optional: false,
-							Set:      filterHash,
-							Default:  "",
+							Type:    schema.TypeSet,
+							Default: "",
+							Set:     filterHash,
 						},
 						"enabled": {
 							Type:     schema.TypeBool,
@@ -144,7 +143,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 				MaxItems: 1000,
 			},
 
-			"bucket_type": {
+			"storage_class": {
 				Type:     schema.TypeString,
 				Default:  ks3.TypeNormal,
 				Optional: true,
@@ -171,7 +170,7 @@ func resourceKsyunKs3BucketCreate(d *schema.ResourceData, meta interface{}) erro
 
 	req := Request{
 		d.Get("bucket").(string),
-		ks3.BucketTypeClass(ks3.BucketType(d.Get("bucket_type").(string))),
+		ks3.BucketTypeClass(ks3.BucketType(d.Get("storage_class").(string))),
 		ks3.ACL(ks3.ACLType(d.Get("acl").(string))),
 	}
 	raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
@@ -203,7 +202,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("creation_date", object.BucketInfo.CreationDate.Format("2006-01-02"))
 	d.Set("location", object.BucketInfo.Location)
 	d.Set("owner", object.BucketInfo.Owner.ID)
-	d.Set("bucket_type", object.BucketInfo.StorageClass)
+	d.Set("storage_class", object.BucketInfo.StorageClass)
 
 	request := map[string]string{"bucketName": d.Id()}
 	var requestInfo *ks3.Client
@@ -299,7 +298,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 			for _, transition := range lifecycleRule.Transitions {
 				e := make(map[string]interface{})
 				e["days"] = transition.Days
-				e["bucket_type"] = string(transition.StorageClass)
+				e["storage_class"] = string(transition.StorageClass)
 				eSli = append(eSli, e)
 			}
 			rule["transitions"] = schema.NewSet(transitionsHash, eSli)
@@ -316,7 +315,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 			for _, transition := range lifecycleRule.NonVersionTransitions {
 				e := make(map[string]interface{})
 				e["days"] = transition.NoncurrentDays
-				e["bucket_type"] = string(transition.StorageClass)
+				e["storage_class"] = string(transition.StorageClass)
 				eSli = append(eSli, e)
 			}
 			rule["noncurrent_version_transition"] = schema.NewSet(transitionsHash, eSli)
@@ -513,6 +512,30 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		} else {
 			rule.Status = string(ExpirationStatusDisabled)
 		}
+		// filter
+		filter := d.Get("filter").(map[string]interface{})
+		if len(filter) > 0 {
+			i := ks3.LifecycleFilter{
+				And: ks3.LifecycleAnd{},
+			}
+			//case【1】: and有值的时候
+			and, ok := filter["and"].(map[string]interface{})
+			if ok {
+				var tags []ks3.Tag
+				for _, tag := range and["tag"].([]interface{}) {
+					tagMap := tag.(map[string]interface{})
+					tags = append(tags, ks3.Tag{Key: tagMap["key"].(string), Value: tagMap["value"].(string)})
+				}
+				i.And = ks3.LifecycleAnd{
+					Prefix: and["prefix"].(string),
+					Tag:    tags,
+				}
+			} else {
+				//case【2】: and无值的时候、直接获取prefix
+				i.And.Prefix, _ = filter["prefix"].(string)
+			}
+			rule.Filter = &i
+		}
 
 		// Expiration
 		expiration := d.Get("expiration").(map[string]interface{})
@@ -545,7 +568,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 				i := ks3.LifecycleTransition{}
 
 				valDays := transition.(map[string]interface{})["days"].(int)
-				valStorageClass := transition.(map[string]interface{})["bucket_type"].(string)
+				valStorageClass := transition.(map[string]interface{})["storage_class"].(string)
 
 				if valDays > 0 {
 					i.Days = valDays
@@ -639,12 +662,6 @@ func filterHash(v interface{}) int {
 	if v, ok := m["prefix"]; ok {
 		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
 	}
-	if v, ok := m["and"]; ok {
-		buf.WriteString(fmt.Sprintf("%d-", v.(string)))
-	}
-	if v, ok := m["tag"]; ok {
-		buf.WriteString(fmt.Sprintf("%v-", v.(string)))
-	}
 	return hashcode.String(buf.String())
 }
 
@@ -669,7 +686,7 @@ func transitionsHash(v interface{}) int {
 	if v, ok := m["created_before_date"]; ok {
 		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
 	}
-	if v, ok := m["bucket_type"]; ok {
+	if v, ok := m["storage_class"]; ok {
 		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
 	}
 	if v, ok := m["days"]; ok {
