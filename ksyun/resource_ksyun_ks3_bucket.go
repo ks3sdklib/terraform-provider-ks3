@@ -115,6 +115,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 						"filter": {
 							Type:     schema.TypeSet,
 							Optional: true,
+							MaxItems: 1,
 							Set:      filterHash,
 						},
 						"enabled": {
