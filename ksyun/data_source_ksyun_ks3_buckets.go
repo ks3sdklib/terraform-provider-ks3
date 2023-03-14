@@ -123,7 +123,7 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 										Set:      filterHash,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
-												"And": {
+												"and": {
 													Type:     schema.TypeSet,
 													Optional: true,
 													Elem: &schema.Resource{
