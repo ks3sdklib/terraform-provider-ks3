@@ -38,11 +38,6 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"private", "public-read", "public-read-write"}, false),
 			},
-			"force_destroy": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
-			},
 			"cors_rule": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -560,47 +555,52 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 
 		// Expiration
 		expiration, ok := d.Get("expiration").(map[string]interface{})
+		fmt.Println("expiration=", expiration)
 		if ok && len(expiration) > 0 {
-			i := ks3.LifecycleExpiration{}
+			expirationTmp := ks3.LifecycleExpiration{}
 			valDate, _ := expiration["date"].(string)
 			valDays, _ := expiration["days"].(int)
 
 			cnt := 0
 			if valDate != "" {
-				i.Date = fmt.Sprintf("%sT00:00:00+08:00", valDate)
+				expirationTmp.Date = fmt.Sprintf("%sT00:00:00+08:00", valDate)
 				cnt++
 			}
 			if valDays > 0 {
-				i.Days = valDays
+				expirationTmp.Days = valDays
 				cnt++
 			}
 
 			if cnt != 1 {
 				return WrapError(Error("One and only one of 'date', 'date' and 'days' can be specified in one expiration configuration."))
 			}
-			rule.Expiration = &i
+			rule.Expiration = &expirationTmp
+			fmt.Println("expirationTmp=", expirationTmp)
 		}
 
 		// Transitions
 		transitionsRaw := d.Get(fmt.Sprintf("lifecycle_rule.%d.transitions", i))
 		if transitionsRaw != nil {
+			fmt.Println("rule.transitionsRaw=", transitionsRaw)
 			transitions := transitionsRaw.(*schema.Set).List()
+			fmt.Println("rule.transitions=", transitions)
 			if len(transitions) > 0 {
 				for _, transition := range transitions {
-					i := ks3.LifecycleTransition{}
-
+					transitionTmp := ks3.LifecycleTransition{}
+					fmt.Println("rule.transition=", transition)
 					valDays := transition.(map[string]interface{})["days"].(int)
 					valStorageClass := transition.(map[string]interface{})["storage_class"].(string)
 
 					if valDays > 0 {
-						i.Days = valDays
+						transitionTmp.Days = valDays
 					}
 
 					if valStorageClass != "" {
-						i.StorageClass = ks3.StorageClassType(valStorageClass)
+						transitionTmp.StorageClass = ks3.StorageClassType(valStorageClass)
 					}
-					rule.Transitions = append(rule.Transitions, i)
+					rule.Transitions = append(rule.Transitions, transitionTmp)
 				}
+				fmt.Println("rule.Transitions=", rule.Transitions)
 			}
 		}
 		rules = append(rules, rule)
@@ -638,38 +638,36 @@ func resourceKsyunKs3BucketDelete(d *schema.ResourceData, meta interface{}) erro
 		})
 		if err != nil {
 			if IsExpectedErrors(err, []string{"BucketNotEmpty"}) {
-				if d.Get("force_destroy").(bool) {
-					raw, er := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
-						bucket, _ := ks3Client.Bucket(d.Get("bucket").(string))
-						marker := ""
-						retryTime := 3
-						for retryTime > 0 {
-							lsRes, err := bucket.ListObjects(ks3.Marker(marker))
-							if err != nil {
-								retryTime--
-								time.Sleep(time.Duration(1) * time.Second)
-								continue
-							}
-							for _, object := range lsRes.Objects {
-								bucket.DeleteObject(object.Key)
-							}
-							if lsRes.IsTruncated {
-								marker = lsRes.NextMarker
-							} else {
-								return true, nil
-							}
+				raw, er := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
+					bucket, _ := ks3Client.Bucket(d.Get("bucket").(string))
+					marker := ""
+					retryTime := 3
+					for retryTime > 0 {
+						lsRes, err := bucket.ListObjects(ks3.Marker(marker))
+						if err != nil {
+							retryTime--
+							time.Sleep(time.Duration(1) * time.Second)
+							continue
 						}
-						return false, nil
-					})
-					if er != nil {
-						return resource.NonRetryableError(er)
+						for _, object := range lsRes.Objects {
+							bucket.DeleteObject(object.Key)
+						}
+						if lsRes.IsTruncated {
+							marker = lsRes.NextMarker
+						} else {
+							return true, nil
+						}
 					}
-					addDebug("DeleteObjects", raw, requestInfo, map[string]string{"bucketName": d.Id()})
-					return resource.RetryableError(err)
+					return false, nil
+				})
+				if er != nil {
+					return resource.NonRetryableError(er)
 				}
+				addDebug("DeleteObjects", raw, requestInfo, map[string]string{"bucketName": d.Id()})
+				return resource.RetryableError(err)
 			}
-			return resource.NonRetryableError(err)
 		}
+		return resource.NonRetryableError(err)
 		addDebug("DeleteBucket", raw, requestInfo, map[string]string{"bucketName": d.Id()})
 		return nil
 	})
