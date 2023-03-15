@@ -511,7 +511,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 
 	rules := make([]ks3.LifecycleRule, 0, len(lifecycleRules))
 
-	for i, lifecycleRule := range lifecycleRules {
+	for _, lifecycleRule := range lifecycleRules {
 		r := lifecycleRule.(map[string]interface{})
 
 		rule := ks3.LifecycleRule{}
@@ -528,7 +528,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			rule.Status = string(ExpirationStatusDisabled)
 		}
 		// filter
-		filter, ok := d.Get("filter").(map[string]interface{})
+		filter, ok := r["filter"].(map[string]interface{})
 		if ok {
 			rule.Filter = &ks3.LifecycleFilter{
 				And: ks3.LifecycleAnd{},
@@ -554,7 +554,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		}
 
 		// Expiration
-		expiration, ok := d.Get("expiration").(map[string]interface{})
+		expiration, ok := r["expiration"].(map[string]interface{})
 		fmt.Println("expiration=", expiration)
 		if ok && len(expiration) > 0 {
 			expirationTmp := ks3.LifecycleExpiration{}
@@ -579,7 +579,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		}
 
 		// Transitions
-		transitionsRaw := d.Get(fmt.Sprintf("lifecycle_rule.%d.transitions", i))
+		transitionsRaw := r["transitions"]
 		if transitionsRaw != nil {
 			fmt.Println("rule.transitionsRaw=", transitionsRaw)
 			transitions := transitionsRaw.(*schema.Set).List()
