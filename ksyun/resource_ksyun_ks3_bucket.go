@@ -602,8 +602,8 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 					rule.Transitions = append(rule.Transitions, i)
 				}
 			}
+			rules = append(rules, rule)
 		}
-		rules = append(rules, rule)
 	}
 
 	raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
