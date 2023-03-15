@@ -553,6 +553,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			rule.Prefix, _ = filter["prefix"].(string)
 		}
 
+		fmt.Println("r========================", r)
 		// Expiration
 		expiration, ok := r["expiration"].(map[string]interface{})
 		fmt.Println("expiration=", expiration)
