@@ -543,11 +543,10 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 
 		rule := ks3.LifecycleRule{}
 
-		// ID
+		// ID--有值
 		if val, ok := r["id"].(string); ok && val != "" {
 			rule.ID = val
 		}
-		fmt.Println("rule.ID=", rule.ID)
 		// Enabled
 		if val, ok := r["enabled"].(bool); ok && val {
 			rule.Status = string(ExpirationStatusEnabled)
@@ -555,41 +554,41 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			rule.Status = string(ExpirationStatusDisabled)
 		}
 		// filter
-		filter, ok := r["filter"].(map[string]interface{})
-		if ok {
-			rule.Filter = &ks3.LifecycleFilter{
-				And: ks3.LifecycleAnd{},
-			}
-			//case【1】: and有值的时候
-			and, ok := filter["and"].(map[string]interface{})
-			if ok {
-				var tags []ks3.Tag
-				for _, tag := range and["tag"].([]interface{}) {
-					tagMap := tag.(map[string]interface{})
-					tags = append(tags, ks3.Tag{Key: tagMap["key"].(string), Value: tagMap["value"].(string)})
-				}
-				rule.Filter.And = ks3.LifecycleAnd{
-					Prefix: and["prefix"].(string),
-					Tag:    tags,
-				}
-			} else {
-				//case【2】: and无值的时候、直接获取prefix
-				rule.Filter.And.Prefix, _ = filter["prefix"].(string)
-			}
-		} else {
-			rule.Prefix, _ = filter["prefix"].(string)
-		}
+		//filter, ok := r["filter"].(map[string]interface{})
+		//if ok {
+		//	rule.Filter = &ks3.LifecycleFilter{
+		//		And: ks3.LifecycleAnd{},
+		//	}
+		//	//case【1】: and有值的时候
+		//	and, ok := filter["and"].(map[string]interface{})
+		//	if ok {
+		//		var tags []ks3.Tag
+		//		for _, tag := range and["tag"].([]interface{}) {
+		//			tagMap := tag.(map[string]interface{})
+		//			tags = append(tags, ks3.Tag{Key: tagMap["key"].(string), Value: tagMap["value"].(string)})
+		//		}
+		//		rule.Filter.And = ks3.LifecycleAnd{
+		//			Prefix: and["prefix"].(string),
+		//			Tag:    tags,
+		//		}
+		//	} else {
+		//		//case【2】: and无值的时候、直接获取prefix
+		//		rule.Filter.And.Prefix, _ = filter["prefix"].(string)
+		//	}
+		//} else {
+		//	rule.Prefix, _ = filter["prefix"].(string)
+		//}
 
-		fmt.Printf("r===================== ===%v", r)
-		fmt.Printf("r[\"expiration\"]=%v\\n", r["expiration"])
 		// Expiration
-		expiration, ok := r["expiration"].(map[string]interface{})
-		fmt.Printf("expiration=%v,ok=%v", expiration, ok)
+		a := r["expiration"]
+		expiration1, ok := r["expiration"].(map[string]interface{})
+		expiration, ok := r["expiration"].([]map[string]interface{})
+		addDebug("Getexpiration", a, requestInfo, expiration, expiration1)
 
 		if ok {
 			expirationTmp := ks3.LifecycleExpiration{}
-			valDate, _ := expiration["date"].(string)
-			valDays, _ := expiration["days"].(int)
+			valDate, _ := expiration1["date"].(string)
+			valDays, _ := expiration1["days"].(int)
 
 			cnt := 0
 			if valDate != "" {
