@@ -340,23 +340,6 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 			}
 			rule["transitions"] = schema.NewSet(transitionsHash, eSli)
 		}
-		// NoncurrentVersionExpiration
-		if lifecycleRule.NonVersionExpiration != nil {
-			e := make(map[string]interface{})
-			e["days"] = int(lifecycleRule.NonVersionExpiration.NoncurrentDays)
-			rule["noncurrent_version_expiration"] = schema.NewSet(expirationHash, []interface{}{e})
-		}
-		// NoncurrentVersionTransitions
-		if len(lifecycleRule.NonVersionTransitions) != 0 {
-			var eSli []interface{}
-			for _, transition := range lifecycleRule.NonVersionTransitions {
-				e := make(map[string]interface{})
-				e["days"] = transition.NoncurrentDays
-				e["storage_class"] = string(transition.StorageClass)
-				eSli = append(eSli, e)
-			}
-			rule["noncurrent_version_transition"] = schema.NewSet(transitionsHash, eSli)
-		}
 		lrules = append(lrules, rule)
 	}
 
@@ -599,22 +582,25 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		}
 
 		// Transitions
-		transitions := d.Get(fmt.Sprintf("lifecycle_rule.%d.transitions", i)).(*schema.Set).List()
-		if len(transitions) > 0 {
-			for _, transition := range transitions {
-				i := ks3.LifecycleTransition{}
+		transitionsRaw := d.Get(fmt.Sprintf("lifecycle_rule.%d.transitions", i))
+		if transitionsRaw != nil {
+			transitions := transitionsRaw.(*schema.Set).List()
+			if len(transitions) > 0 {
+				for _, transition := range transitions {
+					i := ks3.LifecycleTransition{}
 
-				valDays := transition.(map[string]interface{})["days"].(int)
-				valStorageClass := transition.(map[string]interface{})["storage_class"].(string)
+					valDays := transition.(map[string]interface{})["days"].(int)
+					valStorageClass := transition.(map[string]interface{})["storage_class"].(string)
 
-				if valDays > 0 {
-					i.Days = valDays
+					if valDays > 0 {
+						i.Days = valDays
+					}
+
+					if valStorageClass != "" {
+						i.StorageClass = ks3.StorageClassType(valStorageClass)
+					}
+					rule.Transitions = append(rule.Transitions, i)
 				}
-
-				if valStorageClass != "" {
-					i.StorageClass = ks3.StorageClassType(valStorageClass)
-				}
-				rule.Transitions = append(rule.Transitions, i)
 			}
 		}
 		rules = append(rules, rule)
