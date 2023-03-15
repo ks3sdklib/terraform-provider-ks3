@@ -576,8 +576,8 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		}
 
 		// Expiration
-		expiration := d.Get("expiration").(map[string]interface{})
-		if len(expiration) > 0 {
+		expiration, ok := d.Get("expiration").(map[string]interface{})
+		if ok && len(expiration) > 0 {
 			i := ks3.LifecycleExpiration{}
 			valDate, _ := expiration["date"].(string)
 			valDays, _ := expiration["days"].(int)
@@ -595,7 +595,6 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			if cnt != 1 {
 				return WrapError(Error("One and only one of 'date', 'date' and 'days' can be specified in one expiration configuration."))
 			}
-
 			rule.Expiration = &i
 		}
 
