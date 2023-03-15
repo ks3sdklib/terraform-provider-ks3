@@ -538,7 +538,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 
 	rules := make([]ks3.LifecycleRule, 0, len(lifecycleRules))
 
-	for i, lifecycleRule := range lifecycleRules {
+	for _, lifecycleRule := range lifecycleRules {
 		r := lifecycleRule.(map[string]interface{})
 
 		rule := ks3.LifecycleRule{}
@@ -580,16 +580,16 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			rule.Prefix, _ = filter["prefix"].(string)
 		}
 
-		fmt.Printf("r===================== ===%v", &r)
-		fmt.Println("r[\"expiration\"].========================", r["expiration"])
+		fmt.Printf("r===================== ===%v", r)
+		fmt.Printf("r[\"expiration\"]=%v\\n", r["expiration"])
 		// Expiration
-		expiration := d.Get(fmt.Sprintf("lifecycle_rule.%d.expiration", i)).(*schema.Set).List()
-		fmt.Printf("expiration=", expiration)
+		expiration, ok := r["expiration"].(map[string]interface{})
+		fmt.Printf("expiration=%v,ok=%v", expiration, ok)
+
 		if ok {
-			e := expiration[0].(map[string]interface{})
 			expirationTmp := ks3.LifecycleExpiration{}
-			valDate, _ := e["date"].(string)
-			valDays, _ := e["days"].(int)
+			valDate, _ := expiration["date"].(string)
+			valDays, _ := expiration["days"].(int)
 
 			cnt := 0
 			if valDate != "" {
