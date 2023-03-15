@@ -170,6 +170,34 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 								},
 							},
 						},
+						"transitions": {
+							Type:     schema.TypeSet,
+							Optional: true,
+							Set:      transitionsHash,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"date": {
+										Type:         schema.TypeString,
+										Optional:     true,
+										ValidateFunc: validateKs3BucketDateTimestamp,
+									},
+									"days": {
+										Type:     schema.TypeInt,
+										Optional: true,
+									},
+									"storage_class": {
+										Type:     schema.TypeString,
+										Default:  ks3.StorageStandard,
+										Optional: true,
+										ValidateFunc: validation.StringInSlice([]string{
+											string(ks3.StorageStandard),
+											string(ks3.StorageIA),
+											string(ks3.StorageArchive),
+										}, false),
+									},
+								},
+							},
+						},
 					},
 				},
 				MaxItems: 1000,
@@ -705,16 +733,13 @@ func expirationHash(v interface{}) int {
 	if v, ok := m["days"]; ok {
 		buf.WriteString(fmt.Sprintf("%d-", v.(int)))
 	}
-	if v, ok := m["expired_object_delete_marker"]; ok {
-		buf.WriteString(fmt.Sprintf("%v-", v.(bool)))
-	}
 	return hashcode.String(buf.String())
 }
 
 func transitionsHash(v interface{}) int {
 	var buf bytes.Buffer
 	m := v.(map[string]interface{})
-	if v, ok := m["created_before_date"]; ok {
+	if v, ok := m["date"]; ok {
 		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
 	}
 	if v, ok := m["storage_class"]; ok {
