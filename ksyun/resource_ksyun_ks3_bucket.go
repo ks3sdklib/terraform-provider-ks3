@@ -156,7 +156,6 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 						"expiration": {
 							Type:     schema.TypeSet,
 							Optional: true,
-							Set:      expirationHash,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"date": {
@@ -350,7 +349,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 				e["date"] = t.Format("2006-01-02")
 			}
 			e["days"] = lifecycleRule.Expiration.Days
-			rule["expiration"] = schema.NewSet(expirationHash, []interface{}{e})
+			rule["expiration"] = lifecycleRule.Expiration
 		}
 		// transitions
 		if len(lifecycleRule.Transitions) != 0 {
@@ -581,7 +580,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			rule.Prefix, _ = filter["prefix"].(string)
 		}
 
-		fmt.Println("r===================== ===", r)
+		fmt.Printf("r===================== ===%v", r)
 		fmt.Println("r[\"expiration\"].========================", r["expiration"])
 		// Expiration
 		expiration, ok := r["expiration"].(map[string]interface{})
@@ -724,17 +723,17 @@ func filterHash(v interface{}) int {
 	return hashcode.String(buf.String())
 }
 
-func expirationHash(v interface{}) int {
-	var buf bytes.Buffer
-	m := v.(map[string]interface{})
-	if v, ok := m["date"]; ok {
-		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
-	}
-	if v, ok := m["days"]; ok {
-		buf.WriteString(fmt.Sprintf("%d-", v.(int)))
-	}
-	return hashcode.String(buf.String())
-}
+//func expirationHash(v interface{}) int {
+//	var buf bytes.Buffer
+//	m := v.(map[string]interface{})
+//	if v, ok := m["date"]; ok {
+//		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
+//	}
+//	if v, ok := m["days"]; ok {
+//		buf.WriteString(fmt.Sprintf("%d-", v.(int)))
+//	}
+//	return hashcode.String(buf.String())
+//}
 
 func transitionsHash(v interface{}) int {
 	var buf bytes.Buffer
