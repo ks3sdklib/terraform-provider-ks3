@@ -572,7 +572,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 				rule.Filter.And.Prefix, _ = filter["prefix"].(string)
 			}
 		} else {
-			rule.Filter.And.Prefix, _ = filter["prefix"].(string)
+			rule.Prefix, _ = filter["prefix"].(string)
 		}
 
 		// Expiration
