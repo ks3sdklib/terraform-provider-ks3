@@ -594,7 +594,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		}
 
 		// Expiration
-		a := r["expiration"]
+		a := r["expiration  "]
 		expirationDays, ok := d.Get("lifecycle_rule.0.expiration.0.days").(int)
 		fmt.Println("---------------------------------")
 		fmt.Printf("expirationDays=%v\n", expirationDays)
