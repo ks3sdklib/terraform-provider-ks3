@@ -579,9 +579,11 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		//	rule.Prefix, _ = filter["prefix"].(string)
 		//}
 		fmt.Println("---------------------------------")
-		expirationMap := r["expiration"].(map[string]interface{})
-		fmt.Println("expirationMap", expirationMap)
-		expirationModel := r["expiration"].(interface{})
+		expirationSet := r["expiration"].(*schema.Set)
+		fmt.Println("expirationSet", expirationSet)
+		expirationList := expirationSet.List()
+		fmt.Println("expirationList", expirationList)
+		expirationModel := expirationList[0]
 		fmt.Println("expirationModel", expirationModel)
 		fmt.Println("---------------------------------")
 		// 获取第一个生命周期规则的到期天数
