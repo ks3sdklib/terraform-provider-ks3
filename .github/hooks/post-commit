@@ -5,3 +5,4 @@ tag=$(grep -iE 'tag:.*' "$1" | sed -E 's/tag:(.*)/\\1/g' | tr -d '[:space:]')
 if [[ -n "$tag" ]]; then
   git tag -a "$tag" -m "自动打标签 $tag"
 fi
+
