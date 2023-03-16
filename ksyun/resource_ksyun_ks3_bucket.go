@@ -579,6 +579,18 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		//	rule.Prefix, _ = filter["prefix"].(string)
 		//}
 
+		expiration, ok := d.GetOk("lifecycle_rule.0.expiration")
+		if !ok {
+			return fmt.Errorf("expiration not found")
+		}
+
+		days, ok := expiration.(map[string]interface{})["days"].(int)
+		if !ok {
+			return fmt.Errorf("days not found or not an integer")
+		}
+
+		addDebug("days", days)
+
 		// 获取第一个生命周期规则的到期天数
 		if rules, ok := d.Get("lifecycle_rule").([]interface{}); ok && len(rules) > 0 {
 			if rule, ok := rules[0].(map[string]interface{}); ok {
@@ -604,8 +616,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		}
 		fmt.Printf("expirationDays=%d", expirationDays)
 		expiration1, ok := r["expiration"].(map[string]interface{})
-		expiration, ok := r["expiration"].([]map[string]interface{})
-		addDebug("Getexpiration", a, requestInfo, expiration, expiration1, expirationDays)
+		addDebug("Getexpiration", a, requestInfo, expiration1, expirationDays)
 
 		if ok {
 			expirationTmp := ks3.LifecycleExpiration{}
