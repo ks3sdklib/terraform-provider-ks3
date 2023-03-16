@@ -581,9 +581,13 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 
 		// Expiration
 		a := r["expiration"]
+		expirationDays, ok := d.Get("lifecycle_rule.0.expiration.0.days").(int)
+		if !ok {
+			return fmt.Errorf("failed to get expiration days")
+		}
 		expiration1, ok := r["expiration"].(map[string]interface{})
 		expiration, ok := r["expiration"].([]map[string]interface{})
-		addDebug("Getexpiration", a, requestInfo, expiration, expiration1)
+		addDebug("Getexpiration", a, requestInfo, expiration, expiration1, expirationDays)
 
 		if ok {
 			expirationTmp := ks3.LifecycleExpiration{}
