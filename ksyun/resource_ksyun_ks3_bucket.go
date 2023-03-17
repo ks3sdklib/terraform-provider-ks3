@@ -115,7 +115,6 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 						"filter": {
 							Type:     schema.TypeMap,
 							Optional: true,
-							MaxItems: 1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"and": {
