@@ -580,11 +580,15 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		//}
 
 		// Expiration
-		expiration1, ok := r["expiration"].(map[string]interface{})
+		expirationMap, ok := r["expiration"].(map[string]interface{})
+		fmt.Println("---------------------------------")
+		fmt.Println("expirationMap", expirationMap)
 		if ok {
 			expirationTmp := ks3.LifecycleExpiration{}
-			valDate, _ := expiration1["date"].(string)
-			valDays, _ := expiration1["days"].(int)
+			valDate, _ := expirationMap["date"].(string)
+			valDays, _ := expirationMap["days"].(int)
+			fmt.Println("valDate", valDate)
+			fmt.Println("valDays", valDays)
 
 			cnt := 0
 			if valDate != "" {
@@ -602,7 +606,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			rule.Expiration = &expirationTmp
 			fmt.Println("expirationTmp=", expirationTmp)
 		}
-
+		fmt.Println("---------------------------------")
 		// Transitions
 		transitionsRaw := r["transitions"]
 		if transitionsRaw != nil {
