@@ -154,7 +154,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 							Required: true,
 						},
 						"expiration": {
-							Type:     schema.TypeSet,
+							Type:     schema.TypeMap,
 							Optional: true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
@@ -578,41 +578,9 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		//} else {
 		//	rule.Prefix, _ = filter["prefix"].(string)
 		//}
-		fmt.Println("---------------------------------")
-		expirationSet := r["expiration"].(*schema.Set)
-		fmt.Println("expirationSet", expirationSet)
-		expirationList := expirationSet.List()
-		fmt.Println("expirationList", expirationList)
-		expirationModel := expirationList[0]
-		fmt.Println("expirationModel", expirationModel)
-		fmt.Println("---------------------------------")
-		// 获取第一个生命周期规则的到期天数
-		if rules, ok := d.Get("lifecycle_rule").([]interface{}); ok && len(rules) > 0 {
-			if rule, ok := rules[0].(map[string]interface{}); ok {
-				if expiration, ok := rule["expiration"].(map[string]interface{}); ok {
-					if days, ok := expiration["days"].(int); ok {
-						// 这里的 days 应该是 365
-						fmt.Println("---------------------------------")
-						fmt.Printf("cqc-expirationDays=%v\n", days)
-						fmt.Println("---------------------------------")
-					}
-				}
-			}
-		}
 
 		// Expiration
-		a := r["expiration  "]
-		expirationDays, ok := d.Get("lifecycle_rule.0.expiration.0.days").(int)
-		fmt.Println("---------------------------------")
-		fmt.Printf("expirationDays=%v\n", expirationDays)
-		fmt.Println("---------------------------------")
-		if !ok {
-			return fmt.Errorf("failed to get expiration days")
-		}
-		fmt.Printf("expirationDays=%d", expirationDays)
 		expiration1, ok := r["expiration"].(map[string]interface{})
-		addDebug("Getexpiration", a, requestInfo, expiration1, expirationDays)
-
 		if ok {
 			expirationTmp := ks3.LifecycleExpiration{}
 			valDate, _ := expiration1["date"].(string)
