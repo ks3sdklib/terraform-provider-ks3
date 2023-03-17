@@ -2,6 +2,7 @@ package ksyun
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/hashcode"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -112,14 +113,13 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 							Required: true,
 						},
 						"filter": {
-							Type:     schema.TypeSet,
+							Type:     schema.TypeMap,
 							Optional: true,
 							MaxItems: 1,
-							Set:      filterHash,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"and": {
-										Type:     schema.TypeSet,
+										Type:     schema.TypeList,
 										Optional: true,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
@@ -554,41 +554,39 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			rule.Status = string(ExpirationStatusDisabled)
 		}
 		// filter
-		//filter, ok := r["filter"].(map[string]interface{})
-		//if ok {
-		//	rule.Filter = &ks3.LifecycleFilter{
-		//		And: ks3.LifecycleAnd{},
-		//	}
-		//	//case【1】: and有值的时候
-		//	and, ok := filter["and"].(map[string]interface{})
-		//	if ok {
-		//		var tags []ks3.Tag
-		//		for _, tag := range and["tag"].([]interface{}) {
-		//			tagMap := tag.(map[string]interface{})
-		//			tags = append(tags, ks3.Tag{Key: tagMap["key"].(string), Value: tagMap["value"].(string)})
-		//		}
-		//		rule.Filter.And = ks3.LifecycleAnd{
-		//			Prefix: and["prefix"].(string),
-		//			Tag:    tags,
-		//		}
-		//	} else {
-		//		//case【2】: and无值的时候、直接获取prefix
-		//		rule.Filter.And.Prefix, _ = filter["prefix"].(string)
-		//	}
-		//} else {
-		//	rule.Prefix, _ = filter["prefix"].(string)
-		//}
+		filter, ok := r["filter"].(map[string]interface{})
+		if ok {
+			rule.Filter = &ks3.LifecycleFilter{
+				And: ks3.LifecycleAnd{},
+			}
+			and, ok := filter["and"].([]interface{})
+			if ok {
+				var tags []ks3.Tag
+				for _, tag := range and {
+					tagMap := tag.(map[string]interface{})
+					tags = append(tags, ks3.Tag{Key: tagMap["key"].(string), Value: tagMap["value"].(string)})
+				}
+				prefix := filter["prefix"].(string)
+				rule.Filter.And = ks3.LifecycleAnd{
+					Tag:    tags,
+					Prefix: prefix,
+				}
+			} else {
+				//case【2】: and无值的时候、直接获取prefix
+				rule.Filter.And.Prefix, _ = filter["prefix"].(string)
+			}
+		} else {
+			rule.Prefix, _ = filter["prefix"].(string)
+		}
+		json_p, _ := json.Marshal(rule.Filter)
+		fmt.Printf("rule.filter=%s\n", json_p)
 
 		// Expiration
 		expirationMap, ok := r["expiration"].(map[string]interface{})
-		fmt.Println("---------------------------------")
-		fmt.Println("expirationMap", expirationMap)
 		if ok {
 			expirationTmp := ks3.LifecycleExpiration{}
 			valDate, _ := expirationMap["date"].(string)
 			valDays, _ := expirationMap["days"].(int)
-			fmt.Println("valDate", valDate)
-			fmt.Println("valDays", valDays)
 
 			cnt := 0
 			if valDate != "" {
@@ -599,20 +597,18 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 				expirationTmp.Days = valDays
 				cnt++
 			}
-
 			if cnt != 1 {
 				return WrapError(Error("One and only one of 'date', 'date' and 'days' can be specified in one expiration configuration."))
 			}
 			rule.Expiration = &expirationTmp
-			fmt.Println("expirationTmp=", expirationTmp)
 		}
+		json_p, _ = json.Marshal(rule.Expiration)
+		fmt.Printf("rule.Expiration=%s\n", json_p)
 		fmt.Println("---------------------------------")
 		// Transitions
 		transitionsRaw := r["transitions"]
 		if transitionsRaw != nil {
-			fmt.Println("rule.transitionsRaw=", transitionsRaw)
 			transitions := transitionsRaw.(*schema.Set).List()
-			fmt.Println("rule.transitions=", transitions)
 			if len(transitions) > 0 {
 				for _, transition := range transitions {
 					transitionTmp := ks3.LifecycleTransition{}
@@ -629,9 +625,10 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 					}
 					rule.Transitions = append(rule.Transitions, transitionTmp)
 				}
-				fmt.Println("rule.Transitions=", rule.Transitions)
 			}
 		}
+		json_p, _ = json.Marshal(rule.Transitions)
+		fmt.Printf("rule.Transitions=%s\n", json_p)
 		rules = append(rules, rule)
 	}
 
