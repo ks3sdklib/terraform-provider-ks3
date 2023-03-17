@@ -110,7 +110,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 						},
 						"prefix": {
 							Type:     schema.TypeString,
-							Required: true,
+							Optional: true,
 						},
 						"filter": {
 							Type:     schema.TypeSet,
@@ -554,31 +554,55 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		} else {
 			rule.Status = string(ExpirationStatusDisabled)
 		}
-		// filter
-		filter, ok := r["filter"].(map[string]interface{})
-		if ok {
-			rule.Filter = &ks3.LifecycleFilter{
-				And: ks3.LifecycleAnd{},
-			}
-			and, ok := filter["and"].([]interface{})
-			if ok {
-				var tags []ks3.Tag
-				for _, tag := range and {
-					tagMap := tag.(map[string]interface{})
-					tags = append(tags, ks3.Tag{Key: tagMap["key"].(string), Value: tagMap["value"].(string)})
+
+		filter := make(map[string]interface{})
+		if v, ok := d.GetOk("filter"); ok {
+			if f, ok := v.(*schema.Set).List()[0].(map[string]interface{}); ok {
+				if prefix, ok := f["prefix"].(string); ok {
+					filter["prefix"] = prefix
 				}
-				prefix := filter["prefix"].(string)
-				rule.Filter.And = ks3.LifecycleAnd{
-					Tag:    tags,
-					Prefix: prefix,
+				if andList, ok := f["and"].([]interface{}); ok {
+					andMapList := make([]map[string]string, len(andList))
+					for i, and := range andList {
+						if andMap, ok := and.(map[string]interface{}); ok {
+							if tagMap, ok := andMap["tag"].(map[string]interface{}); ok {
+								andMapList[i] = map[string]string{
+									"key":   tagMap["key"].(string),
+									"value": tagMap["value"].(string),
+								}
+							}
+						}
+					}
+					filter["and"] = andMapList
 				}
-			} else {
-				//case【2】: and无值的时候、直接获取prefix
-				rule.Filter.And.Prefix, _ = filter["prefix"].(string)
 			}
-		} else {
-			rule.Prefix, _ = filter["prefix"].(string)
 		}
+
+		// filter
+		//filter, ok := r["filter"].(map[string]interface{})
+		//if ok {
+		//	rule.Filter = &ks3.LifecycleFilter{
+		//		And: ks3.LifecycleAnd{},
+		//	}
+		//	and, ok := filter["and"].([]interface{})
+		//	if ok {
+		//		var tags []ks3.Tag
+		//		for _, tag := range and {
+		//			tagMap := tag.(map[string]interface{})
+		//			tags = append(tags, ks3.Tag{Key: tagMap["key"].(string), Value: tagMap["value"].(string)})
+		//		}
+		//		prefix := filter["prefix"].(string)
+		//		rule.Filter.And = ks3.LifecycleAnd{
+		//			Tag:    tags,
+		//			Prefix: prefix,
+		//		}
+		//	} else {
+		//		//case【2】: and无值的时候、直接获取prefix
+		//		rule.Filter.And.Prefix, _ = filter["prefix"].(string)
+		//	}
+		//} else {
+		//	rule.Prefix, _ = filter["prefix"].(string)
+		//}
 		json_p, _ := json.Marshal(rule.Filter)
 		fmt.Printf("rule.filter=%s\n", json_p)
 
