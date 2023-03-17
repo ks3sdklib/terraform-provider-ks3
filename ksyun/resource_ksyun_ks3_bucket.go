@@ -113,19 +113,20 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 							Required: true,
 						},
 						"filter": {
-							Type:     schema.TypeMap,
+							Type:     schema.TypeSet,
 							Optional: true,
+							MaxItems: 1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
+									"prefix": {
+										Type:     schema.TypeString,
+										Optional: true,
+									},
 									"and": {
-										Type:     schema.TypeList,
+										Type:     schema.TypeSet,
 										Optional: true,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
-												"prefix": {
-													Type:     schema.TypeString,
-													Optional: true,
-												},
 												"tag": {
 													Type:     schema.TypeList,
 													Optional: true,
@@ -133,11 +134,11 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 														Schema: map[string]*schema.Schema{
 															"key": {
 																Type:     schema.TypeString,
-																Optional: true,
+																Required: true,
 															},
 															"value": {
 																Type:     schema.TypeString,
-																Optional: true,
+																Required: true,
 															},
 														},
 													},
@@ -148,6 +149,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 								},
 							},
 						},
+
 						"enabled": {
 							Type:     schema.TypeBool,
 							Required: true,
