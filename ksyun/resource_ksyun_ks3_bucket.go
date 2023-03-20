@@ -547,28 +547,28 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		} else {
 			rule.Status = string(ExpirationStatusDisabled)
 		}
-		filterSet := d.Get("filter").(*schema.Set)
-		if filterSet.Len() > 0 {
-			if filter, ok := filterSet.List()[0].(map[string]interface{}); ok {
-				filterModel := &ks3.LifecycleFilter{
-					XMLName: xml.Name{},
-					And:     ks3.LifecycleAnd{},
-				}
-				filterModel.And.Prefix = filter["prefix"].(string)
-				tagList := filter["tag"].([]interface{})
-				for _, tag := range tagList {
-					tagMap := tag.(map[string]interface{})
-					key := tagMap["key"].(string)
-					value := tagMap["value"].(string)
-					filterModel.And.Tag = append(filterModel.And.Tag, ks3.Tag{
+		if filterSet, ok := r["filter"].(*schema.Set); ok {
+			if filterSet.Len() > 0 {
+				if filter, ok := filterSet.List()[0].(map[string]interface{}); ok {
+					filterModel := &ks3.LifecycleFilter{
 						XMLName: xml.Name{},
-						Key:     key,
-						Value:   value,
-					})
+						And:     ks3.LifecycleAnd{},
+					}
+					filterModel.And.Prefix = filter["prefix"].(string)
+					tagList := filter["tag"].([]interface{})
+					for _, tag := range tagList {
+						tagMap := tag.(map[string]interface{})
+						key := tagMap["key"].(string)
+						value := tagMap["value"].(string)
+						filterModel.And.Tag = append(filterModel.And.Tag, ks3.Tag{
+							XMLName: xml.Name{},
+							Key:     key,
+							Value:   value,
+						})
+					}
+					rule.Filter = filterModel
 				}
-				rule.Filter = filterModel
 			}
-
 		}
 		json_p, _ := json.Marshal(rule.Filter)
 		fmt.Printf("rule.filter=%s\n", json_p)
