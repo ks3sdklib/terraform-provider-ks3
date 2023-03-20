@@ -164,7 +164,7 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 									},
 									"expiration": {
 										Type:     schema.TypeMap,
-										Computed: true,
+										Optional: true,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												"date": {
@@ -177,7 +177,6 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 												},
 											},
 										},
-										MaxItems: 1,
 									},
 									"transitions": {
 										Type:     schema.TypeSet,
