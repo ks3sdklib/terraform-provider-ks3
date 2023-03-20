@@ -27,12 +27,6 @@ func Provider() terraform.ResourceProvider {
 				DefaultFunc: schema.EnvDefaultFunc("KS3_ACCESS_KEY_SECRET", os.Getenv("KS3_ACCESS_KEY_SECRET")),
 				Description: descriptions["secret_key"],
 			},
-			"security_token": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				DefaultFunc: schema.EnvDefaultFunc("KSYUN_SECURITY_TOKEN", os.Getenv("KSYUN_SECURITY_TOKEN")),
-				Description: descriptions["security_token"],
-			},
 			"region": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -83,18 +77,25 @@ var providerConfig map[string]interface{}
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
-	accessKey := os.Getenv("KS3_ACCESS_KEY_ID")
-	secretKey := os.Getenv("KS3_ACCESS_KEY_SECRET")
-	region := os.Getenv("KS3_REGION")
+	accessKey, ok := d.Get("access_key").(string)
+	if !ok {
+		accessKey = os.Getenv("KS3_ACCESS_KEY_ID")
+	}
+	secretKey, ok := d.Get("secret_key").(string)
+	if !ok {
+		secretKey = os.Getenv("KS3_ACCESS_KEY_SECRET")
+	}
+	region, ok := d.Get("region").(string)
+	if !ok {
+		region = os.Getenv("KS3_REGION")
+	}
 	if region == "" {
 		region = DEFAULT_REGION
 	}
-	securityToken := os.Getenv("KSYUN_SECURITY_TOKEN")
 	config := &connectivity.Config{
-		AccessKey:     strings.TrimSpace(accessKey),
-		SecretKey:     strings.TrimSpace(secretKey),
-		SecurityToken: securityToken,
-		Region:        connectivity.Region(strings.TrimSpace(region)),
+		AccessKey: strings.TrimSpace(accessKey),
+		SecretKey: strings.TrimSpace(secretKey),
+		Region:    connectivity.Region(strings.TrimSpace(region)),
 	}
 
 	client, err := config.Client()
@@ -117,8 +118,6 @@ func init() {
 		"secret_key": "The secret key for API operations. You can retrieve this from the 'Security Management' section of the Ksyun Cloud console.",
 
 		"region": "The region where Ksyun-ks3 operations will take place. Examples are  BEIJING etc.",
-
-		"security_token": "security token. A security token is only required if you are using Security Token Service.",
 
 		"client_read_timeout": "The maximum timeout of the client read request.",
 

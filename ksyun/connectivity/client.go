@@ -15,13 +15,12 @@ import (
 )
 
 type KsyunClient struct {
-	Region        Region
-	AccessKey     string
-	SecretKey     string
-	SecurityToken string
-	config        *Config
-	ks3conn       *ks3.Client
-	Endpoint      string
+	Region    Region
+	AccessKey string
+	SecretKey string
+	config    *Config
+	ks3conn   *ks3.Client
+	Endpoint  string
 }
 
 const DefaultClientRetryCountSmall = 5
@@ -45,16 +44,14 @@ func (c *Config) Client() (*KsyunClient, error) {
 	accessKey := os.Getenv("KS3_ACCESS_KEY_ID")
 	secretKey := os.Getenv("KS3_ACCESS_KEY_SECRET")
 	region := os.Getenv("KS3_REGION")
-	securityToken := os.Getenv("KSYUN_SECURITY_TOKEN")
 	endpoint := os.Getenv("KS3_ENDPOINT")
 
 	return &KsyunClient{
-		config:        c,
-		Region:        Region(region),
-		AccessKey:     accessKey,
-		SecretKey:     secretKey,
-		SecurityToken: securityToken,
-		Endpoint:      endpoint,
+		config:    c,
+		Region:    Region(region),
+		AccessKey: accessKey,
+		SecretKey: secretKey,
+		Endpoint:  endpoint,
 	}, nil
 }
 
