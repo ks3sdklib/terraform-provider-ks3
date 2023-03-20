@@ -383,25 +383,58 @@ func bucketsDescriptionAttributes(d *schema.ResourceData, buckets []ks3.BucketPr
 				for _, lifecycleRule := range lifecycle.Rules {
 					ruleMapping := make(map[string]interface{})
 					ruleMapping["id"] = lifecycleRule.ID
-					ruleMapping["filter"] = lifecycleRule.Filter
+					if lifecycleRule.Filter != nil {
+						l := make(map[string]interface{})
+						if lifecycleRule.Prefix != "" {
+							l["prefix"] = lifecycleRule.Prefix
+						}
+						// and
+						if &lifecycleRule.Filter.And != nil {
+							if len(lifecycleRule.Filter.And.Tag) != 0 {
+								var eSli []interface{}
+								for _, tag := range lifecycleRule.Filter.And.Tag {
+									e := make(map[string]interface{})
+									e["key"] = tag.Key
+									e["value"] = tag.Value
+									eSli = append(eSli, e)
+								}
+								l["and"] = eSli
+							}
+						}
+						ruleMapping["filter"] = l
+					}
 					if LifecycleRuleStatus(lifecycleRule.Status) == ExpirationStatusEnabled {
 						ruleMapping["enabled"] = true
 					} else {
 						ruleMapping["enabled"] = false
 					}
-					// Expiration
-					expirationMapping := make(map[string]interface{})
-					if lifecycleRule.Expiration.Date != "" {
-						t, err := time.Parse("2006-01-02T00:00:00+08:00", lifecycleRule.Expiration.Date)
-						if err != nil {
-							return WrapError(err)
+					// expiration
+					if lifecycleRule.Expiration != nil {
+						e := make(map[string]interface{})
+						if lifecycleRule.Expiration.Date != "" {
+							t, err := time.Parse(Iso8601DateFormat, lifecycleRule.Expiration.Date)
+							if err != nil {
+								return WrapError(err)
+							}
+							e["date"] = t.Format("2006-01-02")
 						}
-						expirationMapping["date"] = t.Format("2006-01-02")
+						e["days"] = lifecycleRule.Expiration.Days
+						ruleMapping["expiration"] = lifecycleRule.Expiration
 					}
-					if &lifecycleRule.Expiration.Days != nil {
-						expirationMapping["days"] = int(lifecycleRule.Expiration.Days)
-					}
-					ruleMapping["expiration"] = []map[string]interface{}{expirationMapping}
+
+					// Expiration
+					//expirationMapping := make(map[string]interface{})
+					//if lifecycleRule.Expiration.Date != "" {
+					//	t, err := time.Parse(Iso8601DateFormat, lifecycleRule.Expiration.Date)
+					//	if err != nil {
+					//		return WrapError(err)
+					//	}
+					//	expirationMapping["date"] = t.Format("2006-01-02")
+					//}
+					//if &lifecycleRule.Expiration.Days != nil {
+					//	expirationMapping["days"] = lifecycleRule.Expiration.Days
+					//}
+					//ruleMapping["expiration"] = []map[string]interface{}{expirationMapping}
 					lifecycleRuleMappings = append(lifecycleRuleMappings, ruleMapping)
 				}
 			}
