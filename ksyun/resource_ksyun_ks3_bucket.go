@@ -336,7 +336,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 		if lifecycleRule.Expiration != nil {
 			e := make(map[string]interface{})
 			if lifecycleRule.Expiration.Date != "" {
-				t, err := time.Parse("2006-01-02T00:00:00+08:00", lifecycleRule.Expiration.Date)
+				t, err := time.Parse("2006-01-02T15:04:05-07:00", lifecycleRule.Expiration.Date)
 				if err != nil {
 					return WrapError(err)
 				}
