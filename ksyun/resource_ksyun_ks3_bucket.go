@@ -3,7 +3,6 @@ package ksyun
 import (
 	"bytes"
 	"encoding/json"
-	"encoding/xml"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/hashcode"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -193,7 +192,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 						},
 					},
 				},
-				MaxItems: 1000,
+				MaxItems: 10,
 			},
 
 			"storage_class": {
@@ -326,7 +325,27 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 	for _, lifecycleRule := range lifecycle.Rules {
 		rule := make(map[string]interface{})
 		rule["id"] = lifecycleRule.ID
-		rule["filter"] = lifecycleRule.Filter
+
+		if lifecycleRule.Filter != nil {
+			l := make(map[string]interface{})
+			if lifecycleRule.Prefix != "" {
+				l["prefix"] = lifecycleRule.Prefix
+			}
+			// and
+			if &lifecycleRule.Filter.And != nil {
+				if len(lifecycleRule.Filter.And.Tag) != 0 {
+					var eSli []interface{}
+					for _, tag := range lifecycleRule.Filter.And.Tag {
+						e := make(map[string]interface{})
+						e["key"] = tag.Key
+						e["value"] = tag.Value
+						eSli = append(eSli, e)
+					}
+					l["and"] = eSli
+				}
+			}
+			rule["filter"] = l
+		}
 		if LifecycleRuleStatus(lifecycleRule.Status) == ExpirationStatusEnabled {
 			rule["enabled"] = true
 		} else {
@@ -551,8 +570,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			if filterSet.Len() > 0 {
 				if filter, ok := filterSet.List()[0].(map[string]interface{}); ok {
 					filterModel := &ks3.LifecycleFilter{
-						XMLName: xml.Name{},
-						And:     ks3.LifecycleAnd{},
+						And: ks3.LifecycleAnd{},
 					}
 					filterModel.And.Prefix = filter["prefix"].(string)
 					tagList := filter["tag"].([]interface{})
@@ -561,9 +579,8 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 						key := tagMap["key"].(string)
 						value := tagMap["value"].(string)
 						filterModel.And.Tag = append(filterModel.And.Tag, ks3.Tag{
-							XMLName: xml.Name{},
-							Key:     key,
-							Value:   value,
+							Key:   key,
+							Value: value,
 						})
 					}
 					rule.Filter = filterModel
