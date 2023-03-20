@@ -9,7 +9,6 @@ type Config struct {
 	AccessKey            string
 	SecretKey            string
 	Region               Region
-	SecurityToken        string
 	Protocol             string
 	ClientReadTimeout    int
 	ClientConnectTimeout int
