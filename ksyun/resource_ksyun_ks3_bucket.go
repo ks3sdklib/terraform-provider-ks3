@@ -353,7 +353,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 		if lifecycleRule.Expiration != nil {
 			e := make(map[string]interface{})
 			if lifecycleRule.Expiration.Date != "" {
-				t, err := time.Parse("2006-01-02T15:04:05-07:00", lifecycleRule.Expiration.Date)
+				t, err := time.Parse(Iso8601DateFormat, lifecycleRule.Expiration.Date)
 				if err != nil {
 					return WrapError(err)
 				}
@@ -368,6 +368,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 			for _, transition := range lifecycleRule.Transitions {
 				e := make(map[string]interface{})
 				e["days"] = transition.Days
+				e["date"] = transition.Date
 				e["storage_class"] = string(transition.StorageClass)
 				eSli = append(eSli, e)
 			}
@@ -620,10 +621,12 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			if len(transitions) > 0 {
 				for _, transition := range transitions {
 					transitionTmp := ks3.LifecycleTransition{}
-					fmt.Println("rule.transition=", transition)
 					valDays := transition.(map[string]interface{})["days"].(int)
 					valStorageClass := transition.(map[string]interface{})["storage_class"].(string)
-
+					date := transition.(map[string]interface{})["date"].(string)
+					if date != "" {
+						transitionTmp.Date = fmt.Sprintf("%sT00:00:00.000Z", date)
+					}
 					if valDays > 0 {
 						transitionTmp.Days = valDays
 					}
