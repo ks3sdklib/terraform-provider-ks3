@@ -185,9 +185,8 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												"date": {
-													Type:         schema.TypeString,
-													Optional:     true,
-													ValidateFunc: validateKs3BucketDateTimestamp,
+													Type:     schema.TypeString,
+													Optional: true,
 												},
 												"days": {
 													Type:     schema.TypeInt,
