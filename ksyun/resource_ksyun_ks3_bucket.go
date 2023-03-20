@@ -165,7 +165,6 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 						"transitions": {
 							Type:     schema.TypeSet,
 							Optional: true,
-							Set:      transitionsHash,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"date": {
@@ -596,6 +595,11 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			expirationTmp := ks3.LifecycleExpiration{}
 			valDate, _ := expirationMap["date"].(string)
 			valDays, _ := expirationMap["days"].(int)
+			fmt.Printf("valDate:%s", valDate)
+			fmt.Printf("valDays:%d", valDays)
+
+			valDate, _ = d.Get("expiration.date").(string)
+			valDays, _ = d.Get("expiration.days").(int)
 			fmt.Printf("valDate:%s", valDate)
 			fmt.Printf("valDays:%d", valDays)
 			cnt := 0
