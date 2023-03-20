@@ -163,7 +163,7 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 										Computed: true,
 									},
 									"expiration": {
-										Type:     schema.TypeList,
+										Type:     schema.TypeMap,
 										Computed: true,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
