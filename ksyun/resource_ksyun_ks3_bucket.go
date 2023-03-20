@@ -625,7 +625,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 					valStorageClass := transition.(map[string]interface{})["storage_class"].(string)
 					date := transition.(map[string]interface{})["date"].(string)
 					if date != "" {
-						transitionTmp.Date = fmt.Sprintf("%sT00:00:00.000Z", date)
+						transitionTmp.Date = fmt.Sprintf("%sT00:00:00+08:00", date)
 					}
 					if valDays > 0 {
 						transitionTmp.Days = valDays
