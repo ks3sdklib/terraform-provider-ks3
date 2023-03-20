@@ -124,7 +124,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 										Optional: true,
 									},
 									"and": {
-										Type:     schema.TypeSet,
+										Type:     schema.TypeList,
 										Optional: true,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
