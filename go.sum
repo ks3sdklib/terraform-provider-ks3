@@ -345,6 +345,10 @@ github.com/vmihailenco/tagparser v0.1.1 h1:quXMXlA39OCbd2wAdTsGDlK9RkOk6Wuw+x37w
 github.com/vmihailenco/tagparser v0.1.1/go.mod h1:OeAg3pn3UbLjkWt+rN9oFYB6u/cQgqMEUPoW2WPyhdI=
 github.com/wilac-pv/ksyun-ks3-go-sdk v1.0.10-0.20230315021806-2c89096cf422 h1:Zdbcf9mtkNhI2RpBIsPaQC2DohmSI+aJYYKfevCl9Rs=
 github.com/wilac-pv/ksyun-ks3-go-sdk v1.0.10-0.20230315021806-2c89096cf422/go.mod h1:xdoQuUItOnV9owqguqzovpA9uAdwlP/GueSqKY79DXQ=
+github.com/wilac-pv/ksyun-ks3-go-sdk v1.0.10-0.20230320110048-83ffea36455a h1:qSRRpuyIKgSn4Zio10YJ8lxGFVzg+/l5xEhxkKqynvU=
+github.com/wilac-pv/ksyun-ks3-go-sdk v1.0.10-0.20230320110048-83ffea36455a/go.mod h1:xdoQuUItOnV9owqguqzovpA9uAdwlP/GueSqKY79DXQ=
+github.com/wilac-pv/ksyun-ks3-go-sdk v1.0.10-0.20230320110630-d2f87a83cde1 h1:ijWSaR6HIRnlmp2aNN9XlX25IAqOmTGT4L1PcJ1J2RE=
+github.com/wilac-pv/ksyun-ks3-go-sdk v1.0.10-0.20230320110630-d2f87a83cde1/go.mod h1:xdoQuUItOnV9owqguqzovpA9uAdwlP/GueSqKY79DXQ=
 github.com/xanzy/ssh-agent v0.3.0 h1:wUMzuKtKilRgBAD1sUb8gOwwRr2FGoBVumcjoOACClI=
 github.com/xanzy/ssh-agent v0.3.0/go.mod h1:3s9xbODqPuuhK9JV1R321M/FlMZSBvE5aY6eAcqrDh0=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
