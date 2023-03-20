@@ -3,6 +3,7 @@ package ksyun
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/hashcode"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -128,7 +129,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												"tag": {
-													Type:     schema.TypeList,
+													Type:     schema.TypeMap,
 													Optional: true,
 													Elem: &schema.Resource{
 														Schema: map[string]*schema.Schema{
@@ -555,54 +556,31 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			rule.Status = string(ExpirationStatusDisabled)
 		}
 
-		filter := make(map[string]interface{})
 		if v, ok := d.GetOk("filter"); ok {
 			if f, ok := v.(*schema.Set).List()[0].(map[string]interface{}); ok {
+				filter := &ks3.LifecycleFilter{
+					XMLName: xml.Name{},
+					And:     ks3.LifecycleAnd{},
+				}
 				if prefix, ok := f["prefix"].(string); ok {
-					filter["prefix"] = prefix
+					rule.Prefix = prefix
 				}
 				if andList, ok := f["and"].([]interface{}); ok {
-					andMapList := make([]map[string]string, len(andList))
-					for i, and := range andList {
+					for _, and := range andList {
 						if andMap, ok := and.(map[string]interface{}); ok {
 							if tagMap, ok := andMap["tag"].(map[string]interface{}); ok {
-								andMapList[i] = map[string]string{
-									"key":   tagMap["key"].(string),
-									"value": tagMap["value"].(string),
-								}
+								filter.And.Tag = append(filter.And.Tag, ks3.Tag{
+									XMLName: xml.Name{},
+									Key:     tagMap["key"].(string),
+									Value:   tagMap["value"].(string),
+								})
 							}
 						}
 					}
-					filter["and"] = andMapList
 				}
+				rule.Filter = filter
 			}
 		}
-
-		// filter
-		//filter, ok := r["filter"].(map[string]interface{})
-		//if ok {
-		//	rule.Filter = &ks3.LifecycleFilter{
-		//		And: ks3.LifecycleAnd{},
-		//	}
-		//	and, ok := filter["and"].([]interface{})
-		//	if ok {
-		//		var tags []ks3.Tag
-		//		for _, tag := range and {
-		//			tagMap := tag.(map[string]interface{})
-		//			tags = append(tags, ks3.Tag{Key: tagMap["key"].(string), Value: tagMap["value"].(string)})
-		//		}
-		//		prefix := filter["prefix"].(string)
-		//		rule.Filter.And = ks3.LifecycleAnd{
-		//			Tag:    tags,
-		//			Prefix: prefix,
-		//		}
-		//	} else {
-		//		//case【2】: and无值的时候、直接获取prefix
-		//		rule.Filter.And.Prefix, _ = filter["prefix"].(string)
-		//	}
-		//} else {
-		//	rule.Prefix, _ = filter["prefix"].(string)
-		//}
 		json_p, _ := json.Marshal(rule.Filter)
 		fmt.Printf("rule.filter=%s\n", json_p)
 
@@ -612,7 +590,8 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			expirationTmp := ks3.LifecycleExpiration{}
 			valDate, _ := expirationMap["date"].(string)
 			valDays, _ := expirationMap["days"].(int)
-
+			fmt.Printf("valDate:%s", valDate)
+			fmt.Printf("valDays:%d", valDays)
 			cnt := 0
 			if valDate != "" {
 				expirationTmp.Date = fmt.Sprintf("%sT00:00:00+08:00", valDate)
