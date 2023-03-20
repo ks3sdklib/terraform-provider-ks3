@@ -4,7 +4,7 @@ require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1538
 	github.com/hashicorp/terraform-plugin-sdk v1.17.2
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/wilac-pv/ksyun-ks3-go-sdk v1.0.10-0.20230320110630-d2f87a83cde1
+	github.com/wilac-pv/ksyun-ks3-go-sdk v1.0.10-0.20230315021806-2c89096cf422
 )
 
 require (
