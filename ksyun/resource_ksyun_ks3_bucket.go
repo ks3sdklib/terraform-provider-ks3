@@ -123,26 +123,18 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 										Type:     schema.TypeString,
 										Optional: true,
 									},
-									"and": {
+									"tag": {
 										Type:     schema.TypeList,
 										Optional: true,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
-												"tag": {
-													Type:     schema.TypeMap,
-													Optional: true,
-													Elem: &schema.Resource{
-														Schema: map[string]*schema.Schema{
-															"key": {
-																Type:     schema.TypeString,
-																Required: true,
-															},
-															"value": {
-																Type:     schema.TypeString,
-																Required: true,
-															},
-														},
-													},
+												"key": {
+													Type:     schema.TypeString,
+													Required: true,
+												},
+												"value": {
+													Type:     schema.TypeString,
+													Required: true,
 												},
 											},
 										},
@@ -555,31 +547,28 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		} else {
 			rule.Status = string(ExpirationStatusDisabled)
 		}
-
-		if v, ok := d.GetOk("filter"); ok {
-			if f, ok := v.(*schema.Set).List()[0].(map[string]interface{}); ok {
-				filter := &ks3.LifecycleFilter{
+		filterSet := d.Get("filter").(*schema.Set)
+		if filterSet.Len() > 0 {
+			if filter, ok := filterSet.List()[0].(map[string]interface{}); ok {
+				filterModel := &ks3.LifecycleFilter{
 					XMLName: xml.Name{},
 					And:     ks3.LifecycleAnd{},
 				}
-				if prefix, ok := f["prefix"].(string); ok {
-					rule.Prefix = prefix
+				filterModel.And.Prefix = filter["prefix"].(string)
+				tagList := filter["tag"].([]interface{})
+				for _, tag := range tagList {
+					tagMap := tag.(map[string]interface{})
+					key := tagMap["key"].(string)
+					value := tagMap["value"].(string)
+					filterModel.And.Tag = append(filterModel.And.Tag, ks3.Tag{
+						XMLName: xml.Name{},
+						Key:     key,
+						Value:   value,
+					})
 				}
-				if andList, ok := f["and"].([]interface{}); ok {
-					for _, and := range andList {
-						if andMap, ok := and.(map[string]interface{}); ok {
-							if tagMap, ok := andMap["tag"].(map[string]interface{}); ok {
-								filter.And.Tag = append(filter.And.Tag, ks3.Tag{
-									XMLName: xml.Name{},
-									Key:     tagMap["key"].(string),
-									Value:   tagMap["value"].(string),
-								})
-							}
-						}
-					}
-				}
-				rule.Filter = filter
+				rule.Filter = filterModel
 			}
+
 		}
 		json_p, _ := json.Marshal(rule.Filter)
 		fmt.Printf("rule.filter=%s\n", json_p)
