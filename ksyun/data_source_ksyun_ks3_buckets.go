@@ -184,7 +184,7 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 										Set:      transitionsHash,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
-												"created_before_date": {
+												"date": {
 													Type:         schema.TypeString,
 													Optional:     true,
 													ValidateFunc: validateKs3BucketDateTimestamp,

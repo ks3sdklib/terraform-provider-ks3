@@ -614,7 +614,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		}
 		json_p, _ = json.Marshal(rule.Expiration)
 		fmt.Printf("rule.Expiration=%s\n", json_p)
-		fmt.Println("---------------------------------")
+
 		// Transitions
 		transitionsRaw := r["transitions"]
 		if transitionsRaw != nil {
@@ -639,6 +639,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		}
 		json_p, _ = json.Marshal(rule.Transitions)
 		fmt.Printf("rule.Transitions=%s\n", json_p)
+		fmt.Println("---------------------------------")
 		rules = append(rules, rule)
 	}
 
