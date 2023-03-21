@@ -1,15 +1,16 @@
 package ksyun
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/hashcode"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/wilac-pv/ksyun-ks3-go-sdk/ks3"
 	"github.com/wilac-pv/terraform-provider-ks3/ksyun/connectivity"
 	"log"
-	"strconv"
 	"time"
 )
 
@@ -322,65 +323,45 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 	for _, lifecycleRule := range lifecycle.Rules {
 		rule := make(map[string]interface{})
 		rule["id"] = lifecycleRule.ID
-		if lifecycleRule.Filter != nil {
-			l := make(map[string]interface{})
-			if lifecycleRule.Prefix != "" {
-				l["prefix"] = lifecycleRule.Prefix
-			}
-			// and
-			if &lifecycleRule.Filter.And != nil && len(lifecycleRule.Filter.And.Tag) != 0 {
-				var eSli []interface{}
-				for _, tag := range lifecycleRule.Filter.And.Tag {
-					e := make(map[string]interface{})
-					e["key"] = tag.Key
-					e["value"] = tag.Value
-					eSli = append(eSli, e)
-				}
-				l["and"] = eSli
-
-			}
-			rule["filter"] = l
-		}
+		rule["prefix"] = lifecycleRule.Prefix
 		if LifecycleRuleStatus(lifecycleRule.Status) == ExpirationStatusEnabled {
 			rule["enabled"] = true
 		} else {
 			rule["enabled"] = false
 		}
-		//expiration
+		// expiration
 		if lifecycleRule.Expiration != nil {
-			json_p, _ := json.Marshal(lifecycleRule.Expiration)
-			fmt.Printf("rule= Expiration %s\n", json_p)
 			e := make(map[string]interface{})
 			if lifecycleRule.Expiration.Date != "" {
-				t, err := time.Parse(Iso8601DateFormat, lifecycleRule.Expiration.Date)
+				t, err := time.Parse("2006-01-02T15:04:05.000Z", lifecycleRule.Expiration.Date)
 				if err != nil {
 					return WrapError(err)
 				}
 				e["date"] = t.Format("2006-01-02")
 			}
-			e["days"] = strconv.Itoa(lifecycleRule.Expiration.Days)
-			rule["expiration"] = e
-			fmt.Printf("end expiration=%v", e)
+			e["days"] = int(lifecycleRule.Expiration.Days)
+			rule["expiration"] = schema.NewSet(expirationHash, []interface{}{e})
 		}
 		// transitions
 		if len(lifecycleRule.Transitions) != 0 {
-			json_p, _ := json.Marshal(lifecycleRule.Transitions)
-			fmt.Printf("rule= Transitions %s\n", json_p)
 			var eSli []interface{}
 			for _, transition := range lifecycleRule.Transitions {
 				e := make(map[string]interface{})
+				if transition.Date != "" {
+					t, err := time.Parse("2006-01-02T15:04:05.000Z", transition.Date)
+					if err != nil {
+						return WrapError(err)
+					}
+					e["created_before_date"] = t.Format("2006-01-02")
+				}
 				e["days"] = transition.Days
-				e["date"] = transition.Date
-				e["storage_class"] = transition.StorageClass
+				e["storage_class"] = string(transition.StorageClass)
 				eSli = append(eSli, e)
 			}
-			rule["transitions"] = eSli
-			fmt.Printf("end Transitions=%v", rule["transitions"])
+			rule["transitions"] = schema.NewSet(transitionsHash, eSli)
 		}
 		lrules = append(lrules, rule)
 	}
-	json_p, _ := json.Marshal(lrules)
-	fmt.Printf("rule lrules %s\n", json_p)
 
 	if err := d.Set("lifecycle_rule", lrules); err != nil {
 		return WrapError(err)
@@ -717,4 +698,31 @@ func resourceKsyunKs3BucketDelete(d *schema.ResourceData, meta interface{}) erro
 		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "DeleteBucket", KsyunKs3GoSdk)
 	}
 	return nil
+}
+
+func transitionsHash(v interface{}) int {
+	var buf bytes.Buffer
+	m := v.(map[string]interface{})
+	if v, ok := m["date"]; ok {
+		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
+	}
+	if v, ok := m["storage_class"]; ok {
+		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
+	}
+	if v, ok := m["days"]; ok {
+		buf.WriteString(fmt.Sprintf("%d-", v.(int)))
+	}
+	return hashcode.String(buf.String())
+}
+
+func expirationHash(v interface{}) int {
+	var buf bytes.Buffer
+	m := v.(map[string]interface{})
+	if v, ok := m["date"]; ok {
+		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
+	}
+	if v, ok := m["days"]; ok {
+		buf.WriteString(fmt.Sprintf("%d-", v.(int)))
+	}
+	return hashcode.String(buf.String())
 }
