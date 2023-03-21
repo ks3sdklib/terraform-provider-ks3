@@ -324,7 +324,11 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 		rule := make(map[string]interface{})
 		rule["id"] = lifecycleRule.ID
 
+		json_p, _ := json.Marshal(lifecycleRule)
+		fmt.Printf("rule=%s\n", json_p)
 		if lifecycleRule.Filter != nil {
+			json_p, _ := json.Marshal(lifecycleRule.Filter)
+			fmt.Printf("rule= Filter %s\n", json_p)
 			l := make(map[string]interface{})
 			if lifecycleRule.Prefix != "" {
 				l["prefix"] = lifecycleRule.Prefix
@@ -351,6 +355,8 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 		}
 		// expiration
 		if lifecycleRule.Expiration != nil {
+			json_p, _ := json.Marshal(lifecycleRule.Expiration)
+			fmt.Printf("rule= Expiration %s\n", json_p)
 			e := make(map[string]interface{})
 			if lifecycleRule.Expiration.Date != "" {
 				t, err := time.Parse(Iso8601DateFormat, lifecycleRule.Expiration.Date)
@@ -360,10 +366,13 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 				e["date"] = t.Format("2006-01-02")
 			}
 			e["days"] = lifecycleRule.Expiration.Days
-			rule["expiration"] = lifecycleRule.Expiration
+			rule["expiration"] = e
+			fmt.Printf("end expiration=%v", e)
 		}
 		// transitions
 		if len(lifecycleRule.Transitions) != 0 {
+			json_p, _ := json.Marshal(lifecycleRule.Transitions)
+			fmt.Printf("rule= Transitions %s\n", json_p)
 			var eSli []interface{}
 			for _, transition := range lifecycleRule.Transitions {
 				e := make(map[string]interface{})
@@ -373,9 +382,12 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 				eSli = append(eSli, e)
 			}
 			rule["transitions"] = schema.NewSet(transitionsHash, eSli)
+			fmt.Printf("end Transitions=%v", rule["transitions"])
 		}
 		lrules = append(lrules, rule)
 	}
+	json_p, _ := json.Marshal(lrules)
+	fmt.Printf("rule lrules %s\n", json_p)
 
 	if err := d.Set("lifecycle_rule", lrules); err != nil {
 		return WrapError(err)
