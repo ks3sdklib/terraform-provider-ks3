@@ -434,10 +434,11 @@ func bucketsDescriptionAttributes(d *schema.ResourceData, buckets []ks3.BucketPr
 					if &lifecycleRule.Expiration.Days != nil {
 						expirationMapping["days"] = lifecycleRule.Expiration.Days
 					}
-					ruleMapping["expiration"] = []map[string]interface{}{expirationMapping}
+					ruleMapping["expiration"] = expirationMapping
 					lifecycleRuleMappings = append(lifecycleRuleMappings, ruleMapping)
 				}
 			}
+
 		} else {
 			log.Printf("[WARN] Unable to get lifecycle information for the bucket %s: %v", bucket.Name, err)
 		}
