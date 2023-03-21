@@ -537,7 +537,7 @@ func resourceKsyunKs3BucketLoggingUpdate(client *connectivity.KsyunClient, d *sc
 
 func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
 	bucket := d.Id()
-	lifecycleRules := d.Get("lifecycle_rule").([]map[string]interface{})
+	lifecycleRules := d.Get("lifecycle_rule").([]interface{})
 	var requestInfo *ks3.Client
 	if lifecycleRules == nil || len(lifecycleRules) == 0 {
 		raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
@@ -556,7 +556,8 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 
 	rules := make([]ks3.LifecycleRule, 0, len(lifecycleRules))
 
-	for _, r := range lifecycleRules {
+	for _, lifecycleRule := range lifecycleRules {
+		r := lifecycleRule.(map[string]interface{})
 
 		rule := ks3.LifecycleRule{}
 
