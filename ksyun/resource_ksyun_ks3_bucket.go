@@ -11,6 +11,7 @@ import (
 	"github.com/wilac-pv/ksyun-ks3-go-sdk/ks3"
 	"github.com/wilac-pv/terraform-provider-ks3/ksyun/connectivity"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -341,7 +342,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 				}
 				e["date"] = t.Format("2006-01-02")
 			}
-			e["days"] = lifecycleRule.Expiration.Days
+			e["days"] = strconv.Itoa(lifecycleRule.Expiration.Days)
 			rule["expiration"] = e
 		}
 		// transitions
