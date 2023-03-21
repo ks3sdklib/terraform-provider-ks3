@@ -341,8 +341,8 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 				}
 				e["date"] = t.Format("2006-01-02")
 			}
-			e["days"] = int(lifecycleRule.Expiration.Days)
-			rule["expiration"] = schema.NewSet(expirationHash, []interface{}{e})
+			e["days"] = lifecycleRule.Expiration.Days
+			rule["expiration"] = e
 		}
 		// transitions
 		if len(lifecycleRule.Transitions) != 0 {
