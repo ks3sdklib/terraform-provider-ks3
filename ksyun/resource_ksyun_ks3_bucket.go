@@ -1,10 +1,8 @@
 package ksyun
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/hashcode"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
@@ -324,12 +322,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 	for _, lifecycleRule := range lifecycle.Rules {
 		rule := make(map[string]interface{})
 		rule["id"] = lifecycleRule.ID
-
-		json_p, _ := json.Marshal(lifecycleRule)
-		fmt.Printf("rule=%s\n", json_p)
 		if lifecycleRule.Filter != nil {
-			json_p, _ := json.Marshal(lifecycleRule.Filter)
-			fmt.Printf("rule= Filter %s\n", json_p)
 			l := make(map[string]interface{})
 			if lifecycleRule.Prefix != "" {
 				l["prefix"] = lifecycleRule.Prefix
@@ -377,12 +370,12 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 			var eSli []interface{}
 			for _, transition := range lifecycleRule.Transitions {
 				e := make(map[string]interface{})
-				e["days"] = strconv.Itoa(transition.Days)
+				e["days"] = transition.Days
 				e["date"] = transition.Date
-				e["storage_class"] = string(transition.StorageClass)
+				e["storage_class"] = transition.StorageClass
 				eSli = append(eSli, e)
 			}
-			rule["transitions"] = schema.NewSet(transitionsHash, eSli)
+			rule["transitions"] = eSli
 			fmt.Printf("end Transitions=%v", rule["transitions"])
 		}
 		lrules = append(lrules, rule)
@@ -726,48 +719,4 @@ func resourceKsyunKs3BucketDelete(d *schema.ResourceData, meta interface{}) erro
 		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "DeleteBucket", KsyunKs3GoSdk)
 	}
 	return nil
-}
-
-func filterHash(v interface{}) int {
-	var buf bytes.Buffer
-	m := v.(map[string]interface{})
-	if v, ok := m["prefix"]; ok {
-		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
-	} else {
-		if v, ok := m["And"]; ok {
-			buf.WriteString(fmt.Sprintf("%s-", v.(string)))
-			//if v, ok := v["And"]; ok {
-			//	buf.WriteString(fmt.Sprintf("%s-", v.(string)))
-			//}
-		}
-
-	}
-	return hashcode.String(buf.String())
-}
-
-//func expirationHash(v interface{}) int {
-//	var buf bytes.Buffer
-//	m := v.(map[string]interface{})
-//	if v, ok := m["date"]; ok {
-//		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
-//	}
-//	if v, ok := m["days"]; ok {
-//		buf.WriteString(fmt.Sprintf("%d-", v.(int)))
-//	}
-//	return hashcode.String(buf.String())
-//}
-
-func transitionsHash(v interface{}) int {
-	var buf bytes.Buffer
-	m := v.(map[string]interface{})
-	if v, ok := m["date"]; ok {
-		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
-	}
-	if v, ok := m["storage_class"]; ok {
-		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
-	}
-	if v, ok := m["days"]; ok {
-		buf.WriteString(fmt.Sprintf("%v-", v))
-	}
-	return hashcode.String(buf.String())
 }

@@ -120,7 +120,6 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 										Type:     schema.TypeSet,
 										Optional: true,
 										MaxItems: 1,
-										Set:      filterHash,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												"and": {
@@ -181,7 +180,6 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 									"transitions": {
 										Type:     schema.TypeSet,
 										Optional: true,
-										Set:      transitionsHash,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												"date": {
