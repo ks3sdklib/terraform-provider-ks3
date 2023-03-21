@@ -9,7 +9,6 @@ import (
 	"github.com/wilac-pv/ksyun-ks3-go-sdk/ks3"
 	"github.com/wilac-pv/terraform-provider-ks3/ksyun/connectivity"
 	"log"
-	"strconv"
 	"time"
 )
 
@@ -348,36 +347,36 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 			rule["enabled"] = false
 		}
 		// expiration
-		if lifecycleRule.Expiration != nil {
-			json_p, _ := json.Marshal(lifecycleRule.Expiration)
-			fmt.Printf("rule= Expiration %s\n", json_p)
-			e := make(map[string]interface{})
-			if lifecycleRule.Expiration.Date != "" {
-				t, err := time.Parse(Iso8601DateFormat, lifecycleRule.Expiration.Date)
-				if err != nil {
-					return WrapError(err)
-				}
-				e["date"] = t.Format("2006-01-02")
-			}
-			e["days"] = strconv.Itoa(lifecycleRule.Expiration.Days)
-			rule["expiration"] = e
-			fmt.Printf("end expiration=%v", e)
-		}
-		// transitions
-		if len(lifecycleRule.Transitions) != 0 {
-			json_p, _ := json.Marshal(lifecycleRule.Transitions)
-			fmt.Printf("rule= Transitions %s\n", json_p)
-			var eSli []interface{}
-			for _, transition := range lifecycleRule.Transitions {
-				e := make(map[string]interface{})
-				e["days"] = transition.Days
-				e["date"] = transition.Date
-				e["storage_class"] = transition.StorageClass
-				eSli = append(eSli, e)
-			}
-			rule["transitions"] = eSli
-			fmt.Printf("end Transitions=%v", rule["transitions"])
-		}
+		//if lifecycleRule.Expiration != nil {
+		//	json_p, _ := json.Marshal(lifecycleRule.Expiration)
+		//	fmt.Printf("rule= Expiration %s\n", json_p)
+		//	e := make(map[string]interface{})
+		//	if lifecycleRule.Expiration.Date != "" {
+		//		t, err := time.Parse(Iso8601DateFormat, lifecycleRule.Expiration.Date)
+		//		if err != nil {
+		//			return WrapError(err)
+		//		}
+		//		e["date"] = t.Format("2006-01-02")
+		//	}
+		//	e["days"] = strconv.Itoa(lifecycleRule.Expiration.Days)
+		//	rule["expiration"] = e
+		//	fmt.Printf("end expiration=%v", e)
+		//}
+		//// transitions
+		//if len(lifecycleRule.Transitions) != 0 {
+		//	json_p, _ := json.Marshal(lifecycleRule.Transitions)
+		//	fmt.Printf("rule= Transitions %s\n", json_p)
+		//	var eSli []interface{}
+		//	for _, transition := range lifecycleRule.Transitions {
+		//		e := make(map[string]interface{})
+		//		e["days"] = transition.Days
+		//		e["date"] = transition.Date
+		//		e["storage_class"] = transition.StorageClass
+		//		eSli = append(eSli, e)
+		//	}
+		//	rule["transitions"] = eSli
+		//	fmt.Printf("end Transitions=%v", rule["transitions"])
+		//}
 		lrules = append(lrules, rule)
 	}
 	json_p, _ := json.Marshal(lrules)
@@ -537,7 +536,7 @@ func resourceKsyunKs3BucketLoggingUpdate(client *connectivity.KsyunClient, d *sc
 
 func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
 	bucket := d.Id()
-	lifecycleRules := d.Get("lifecycle_rule").([]interface{})
+	lifecycleRules := d.Get("lifecycle_rule").([]map[string]interface{})
 	var requestInfo *ks3.Client
 	if lifecycleRules == nil || len(lifecycleRules) == 0 {
 		raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
@@ -556,11 +555,9 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 
 	rules := make([]ks3.LifecycleRule, 0, len(lifecycleRules))
 
-	for _, lifecycleRule := range lifecycleRules {
-		r := lifecycleRule.(map[string]interface{})
+	for _, r := range lifecycleRules {
 
 		rule := ks3.LifecycleRule{}
-
 		// ID--有值
 		if val, ok := r["id"].(string); ok && val != "" {
 			rule.ID = val
