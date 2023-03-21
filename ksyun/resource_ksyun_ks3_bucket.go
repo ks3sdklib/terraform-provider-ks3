@@ -333,7 +333,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 		if lifecycleRule.Expiration != nil {
 			e := make(map[string]interface{})
 			if lifecycleRule.Expiration.Date != "" {
-				t, err := time.Parse("2006-01-02T15:04:05.000Z", lifecycleRule.Expiration.Date)
+				t, err := time.Parse(Iso8601DateFormat, lifecycleRule.Expiration.Date)
 				if err != nil {
 					return WrapError(err)
 				}
@@ -348,7 +348,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 			for _, transition := range lifecycleRule.Transitions {
 				e := make(map[string]interface{})
 				if transition.Date != "" {
-					t, err := time.Parse("2006-01-02T15:04:05.000Z", transition.Date)
+					t, err := time.Parse(Iso8601DateFormat, transition.Date)
 					if err != nil {
 						return WrapError(err)
 					}
