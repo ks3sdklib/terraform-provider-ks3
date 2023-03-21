@@ -767,7 +767,7 @@ func transitionsHash(v interface{}) int {
 		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
 	}
 	if v, ok := m["days"]; ok {
-		buf.WriteString(fmt.Sprintf("%v-", v.(int)))
+		buf.WriteString(fmt.Sprintf("%v-", v))
 	}
 	return hashcode.String(buf.String())
 }
