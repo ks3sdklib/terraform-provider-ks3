@@ -11,7 +11,6 @@ import (
 	"github.com/wilac-pv/ksyun-ks3-go-sdk/ks3"
 	"github.com/wilac-pv/terraform-provider-ks3/ksyun/connectivity"
 	"log"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -588,20 +587,19 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			expirationTmp := ks3.LifecycleExpiration{}
 			fmt.Printf("---expirationMap:%s", expirationMap)
 			valDate, _ := expirationMap["date"].(string)
-			valDaysTmp, _ := expirationMap["days"].(string)
-			valDays, err := strconv.Atoi(valDaysTmp)
-			if err != nil {
-				// 处理错误
-			}
+			daysInterface := expirationMap["days"]
+			valDays, ok := daysInterface.(int)
 			cnt := 0
+			if ok && valDays > 0 {
+				expirationTmp.Days = valDays
+				cnt++
+			}
+			fmt.Printf("---expirationTmp.Days:%d", expirationTmp.Days)
 			if valDate != "" {
 				expirationTmp.Date = fmt.Sprintf("%sT00:00:00+08:00", valDate)
 				cnt++
 			}
-			if valDays > 0 {
-				expirationTmp.Days = valDays
-				cnt++
-			}
+
 			if cnt != 1 {
 				return WrapError(Error("One and only one of 'date', 'date' and 'days' can be specified in one expiration configuration."))
 			}
