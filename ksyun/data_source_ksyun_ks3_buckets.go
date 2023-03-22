@@ -171,7 +171,7 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 													Optional: true,
 												},
 												"days": {
-													Type:     schema.TypeInt,
+													Type:     schema.TypeString,
 													Optional: true,
 												},
 												"tests": {
@@ -191,7 +191,7 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 													Optional: true,
 												},
 												"days": {
-													Type:     schema.TypeInt,
+													Type:     schema.TypeString,
 													Optional: true,
 												},
 												"storage_class": {
