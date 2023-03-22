@@ -587,10 +587,9 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		if ok {
 			expirationTmp := ks3.LifecycleExpiration{}
 			fmt.Printf("---expirationMap:%s", expirationMap)
-			valDate, _ := expirationMap["date"].(string)
-			daysInterface := expirationMap["days"].(string)
+			daysInterface, ok := expirationMap["days"].(string)
 			cnt := 0
-			if daysInterface != "" {
+			if ok && daysInterface != "" {
 				valDays, err := strconv.Atoi(daysInterface)
 				if err == nil && valDays > 0 {
 					expirationTmp.Days = valDays
@@ -598,7 +597,8 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 				}
 			}
 			fmt.Printf("---expirationTmp.Days:%d", expirationTmp.Days)
-			if valDate != "" {
+			valDate, ok := expirationMap["date"].(string)
+			if ok && valDate != "" {
 				expirationTmp.Date = fmt.Sprintf("%sT00:00:00+08:00", valDate)
 				cnt++
 			}
@@ -618,14 +618,14 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			if len(transitions) > 0 {
 				for _, transition := range transitions {
 					transitionTmp := ks3.LifecycleTransition{}
-					daysInterface := transition.(map[string]interface{})["days"].(string)
 					valStorageClass := transition.(map[string]interface{})["storage_class"].(string)
-					date := transition.(map[string]interface{})["date"].(string)
-					if date != "" {
+					date, ok := transition.(map[string]interface{})["date"].(string)
+					if ok && date != "" {
 						transitionTmp.Date = fmt.Sprintf("%sT00:00:00+08:00", date)
 					}
 					cnt := 0
-					if daysInterface != "" {
+					daysInterface, ok := transition.(map[string]interface{})["days"].(string)
+					if ok && daysInterface != "" {
 						valDays, err := strconv.Atoi(daysInterface)
 						if err == nil && valDays > 0 {
 							transitionTmp.Days = valDays
