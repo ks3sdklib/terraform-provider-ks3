@@ -11,6 +11,7 @@ import (
 	"github.com/wilac-pv/ksyun-ks3-go-sdk/ks3"
 	"github.com/wilac-pv/terraform-provider-ks3/ksyun/connectivity"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -157,7 +158,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 										Optional: true,
 									},
 									"days": {
-										Type:     schema.TypeInt,
+										Type:     schema.TypeString,
 										Optional: true,
 									},
 									"tests": {
@@ -177,7 +178,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 										Optional: true,
 									},
 									"days": {
-										Type:     schema.TypeInt,
+										Type:     schema.TypeString,
 										Optional: true,
 									},
 									"storage_class": {
@@ -345,7 +346,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 				}
 				e["date"] = t.Format("2006-01-02")
 			}
-			e["days"] = lifecycleRule.Expiration.Days
+			e["days"] = fmt.Sprintf("%d", lifecycleRule.Expiration.Days)
 			rule["expiration"] = e
 		}
 		// transitions
@@ -361,7 +362,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 					}
 					e["date"] = t.Format("2006-01-02")
 				}
-				e["days"] = transition.Days
+				e["days"] = fmt.Sprintf("%d", transition.Days)
 				e["storage_class"] = string(transition.StorageClass)
 				eSli = append(eSli, e)
 			}
@@ -587,10 +588,10 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			expirationTmp := ks3.LifecycleExpiration{}
 			fmt.Printf("---expirationMap:%s", expirationMap)
 			valDate, _ := expirationMap["date"].(string)
-			daysInterface := expirationMap["days"]
-			valDays, ok := daysInterface.(int)
+			daysInterface := expirationMap["days"].(string)
+			valDays, err := strconv.Atoi(daysInterface)
 			cnt := 0
-			if ok && valDays > 0 {
+			if err == nil && valDays > 0 {
 				expirationTmp.Days = valDays
 				cnt++
 			}
@@ -615,16 +616,18 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			if len(transitions) > 0 {
 				for _, transition := range transitions {
 					transitionTmp := ks3.LifecycleTransition{}
-					valDays := transition.(map[string]interface{})["days"].(int)
+					daysInterface := transition.(map[string]interface{})["days"].(string)
 					valStorageClass := transition.(map[string]interface{})["storage_class"].(string)
 					date := transition.(map[string]interface{})["date"].(string)
 					if date != "" {
 						transitionTmp.Date = fmt.Sprintf("%sT00:00:00+08:00", date)
 					}
-					if valDays > 0 {
+					valDays, err := strconv.Atoi(daysInterface)
+					cnt := 0
+					if err == nil && valDays > 0 {
 						transitionTmp.Days = valDays
+						cnt++
 					}
-
 					if valStorageClass != "" {
 						transitionTmp.StorageClass = ks3.StorageClassType(valStorageClass)
 					}
@@ -719,7 +722,7 @@ func transitionsHash(v interface{}) int {
 		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
 	}
 	if v, ok := m["days"]; ok {
-		buf.WriteString(fmt.Sprintf("%d-", v.(int)))
+		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
 	}
 	return hashcode.String(buf.String())
 }
@@ -731,7 +734,7 @@ func expirationHash(v interface{}) int {
 		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
 	}
 	if v, ok := m["days"]; ok {
-		buf.WriteString(fmt.Sprintf("%d-", v.(int)))
+		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
 	}
 	return hashcode.String(buf.String())
 }
