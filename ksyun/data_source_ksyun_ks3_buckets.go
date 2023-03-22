@@ -174,6 +174,10 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 													Type:     schema.TypeInt,
 													Optional: true,
 												},
+												"tests": {
+													Type:     schema.TypeString,
+													Optional: true,
+												},
 											},
 										},
 									},

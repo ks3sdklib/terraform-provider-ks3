@@ -161,6 +161,10 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 										Type:     schema.TypeInt,
 										Optional: true,
 									},
+									"tests": {
+										Type:     schema.TypeString,
+										Optional: true,
+									},
 								},
 							},
 						},
@@ -582,10 +586,12 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		expirationMap, ok := r["expiration"].(map[string]interface{})
 		if ok {
 			expirationTmp := ks3.LifecycleExpiration{}
+			fmt.Printf("---expirationMap:%s", expirationMap)
 			valDate, _ := expirationMap["date"].(string)
 			valDays, _ := expirationMap["days"].(int)
 			fmt.Printf("---valDate:%s", valDate)
 			fmt.Printf("---valDays:%d", valDays)
+			fmt.Printf("---tests:%d", expirationMap["tests"].(string))
 			cnt := 0
 			if valDate != "" {
 				expirationTmp.Date = fmt.Sprintf("%sT00:00:00+08:00", valDate)
