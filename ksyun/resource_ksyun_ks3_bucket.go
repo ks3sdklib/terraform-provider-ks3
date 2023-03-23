@@ -551,7 +551,9 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		if val, ok := r["id"].(string); ok && val != "" {
 			rule.ID = val
 		}
-
+		if val, ok := r["prefix"].(string); ok && val != "" {
+			rule.Prefix = val
+		}
 		// Enabled
 		if val, ok := r["enabled"].(bool); ok && val {
 			rule.Status = string(ExpirationStatusEnabled)
