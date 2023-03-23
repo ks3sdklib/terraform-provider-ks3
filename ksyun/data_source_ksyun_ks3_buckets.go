@@ -411,20 +411,6 @@ func bucketsDescriptionAttributes(d *schema.ResourceData, buckets []ks3.BucketPr
 					} else {
 						ruleMapping["enabled"] = false
 					}
-					// expiration
-					//if lifecycleRule.Expiration != nil {
-					//	e := make(map[string]interface{})
-					//	if lifecycleRule.Expiration.Date != "" {
-					//		t, err := time.Parse(Iso8601DateFormat, lifecycleRule.Expiration.Date)
-					//		if err != nil {
-					//			return WrapError(err)
-					//		}
-					//		e["date"] = t.Format("2006-01-02")
-					//	}
-					//	e["days"] = lifecycleRule.Expiration.Days
-					//	ruleMapping["expiration"] = lifecycleRule.Expiration
-					//}
-
 					//Expiration
 					expirationMapping := make(map[string]interface{})
 					if lifecycleRule.Expiration.Date != "" {

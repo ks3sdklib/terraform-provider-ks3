@@ -203,6 +203,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 					string(ks3.TypeNormal),
 					string(ks3.TypeIA),
 					string(ks3.TypeArchive),
+					string(ks3.StorageDeepIA),
 				}, false),
 			},
 		},
@@ -579,6 +580,8 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		}
 		// Expiration
 		expirationMap, ok := r["expiration"].(map[string]interface{})
+		log.Printf("[DEBUG] Ks3 bucket: %s, expirationMap: %#v", d.Id(), expirationMap)
+		log.Printf("[DEBUG] Ks3 bucket: %s, r[\"expiration\"]: %#v", d.Id(), r["expiration"])
 		if ok && expirationMap != nil {
 			expirationTmp := ks3.LifecycleExpiration{}
 			daysInterface, ok := expirationMap["days"].(string)
