@@ -319,6 +319,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 	if err != nil && !ks3NotFoundError(err) {
 		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "GetBucketLifecycle", KsyunKs3GoSdk)
 	}
+	log.Printf("[DEBUG] Ks3 bucket:  %s, raw: %#v", d.Id(), raw)
 	addDebug("GetBucketLifecycle", raw, requestInfo, request)
 	lrules := make([]map[string]interface{}, 0)
 	lifecycle, _ := raw.(ks3.GetBucketLifecycleResult)
@@ -332,9 +333,11 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 			rule["enabled"] = false
 		}
 		// expiration
+		log.Printf("[DEBUG] Ks3 bucket:  %s, start: %#v", d.Id(), raw)
 		if lifecycleRule.Expiration != nil {
+			log.Printf("[DEBUG] Ks3 bucket:  %s, lifecycleRule.Expiration: %#v", d.Id(), lifecycleRule.Expiration)
 			e := make(map[string]interface{})
-			if lifecycleRule.Expiration.Date != "" {
+			if &lifecycleRule.Expiration.Date != nil && lifecycleRule.Expiration.Date != "" {
 				lifecycleRule.Expiration.Date = strings.ReplaceAll(lifecycleRule.Expiration.Date, ".000", "")
 				t, err := time.Parse(Iso8601DateFormat, lifecycleRule.Expiration.Date)
 				if err != nil {
@@ -344,6 +347,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 			}
 			e["days"] = fmt.Sprintf("%d", lifecycleRule.Expiration.Days)
 			rule["expiration"] = e
+			log.Printf("[DEBUG] Ks3 bucket:  %s, lifecycleRule.Expiration  end: %#v", d.Id(), lifecycleRule.Expiration)
 		}
 		// transitions
 		if len(lifecycleRule.Transitions) != 0 {
@@ -598,7 +602,6 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 				expirationTmp.Date = fmt.Sprintf("%sT00:00:00+08:00", valDate)
 				cnt++
 			}
-
 			if cnt > 1 {
 				return WrapError(Error("One and only one of 'date', 'date' and 'days' can be specified in one expiration configuration."))
 			} else if cnt == 0 {
@@ -606,6 +609,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			} else {
 				rule.Expiration = &expirationTmp
 			}
+			log.Printf("[DEBUG] Ks3 bucket:  %s, r[\"end\"]: %#v", d.Id(), r["expiration"])
 		}
 		// Transitions
 		transitionsRaw := r["transitions"]
