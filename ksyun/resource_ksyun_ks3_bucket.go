@@ -38,7 +38,6 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 				Type:         schema.TypeString,
 				Default:      ks3.ACLPrivate,
 				Optional:     true,
-				Computed:     true,
 				ValidateFunc: validation.StringInSlice([]string{"private", "public-read", "public-read-write"}, false),
 			},
 			"cors_rule": {
