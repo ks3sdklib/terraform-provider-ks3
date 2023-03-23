@@ -580,7 +580,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		}
 		// Expiration
 		expirationMap, ok := r["expiration"].(map[string]interface{})
-		log.Printf("[DEBUG] Ks3 bucket: %s, expirationMap: %#v", d.Id(), expirationMap)
+		log.Printf("[DEBUG] Ks3 bucket: %s, put Lifecycle: %#v", d.Id(), expirationMap)
 		log.Printf("[DEBUG] Ks3 bucket: %s, r[\"expiration\"]: %#v", d.Id(), r["expiration"])
 		if ok && expirationMap != nil {
 			expirationTmp := ks3.LifecycleExpiration{}
@@ -599,10 +599,13 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 				cnt++
 			}
 
-			if cnt != 1 {
+			if cnt > 1 {
 				return WrapError(Error("One and only one of 'date', 'date' and 'days' can be specified in one expiration configuration."))
+			} else if cnt == 0 {
+				rule.Expiration = nil
+			} else {
+				rule.Expiration = &expirationTmp
 			}
-			rule.Expiration = &expirationTmp
 		}
 		// Transitions
 		transitionsRaw := r["transitions"]
