@@ -579,7 +579,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		}
 		// Expiration
 		expirationMap, ok := r["expiration"].(map[string]interface{})
-		if ok && expirationMap == nil {
+		if ok && expirationMap != nil {
 			expirationTmp := ks3.LifecycleExpiration{}
 			daysInterface, ok := expirationMap["days"].(string)
 			cnt := 0
