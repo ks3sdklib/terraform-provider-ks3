@@ -334,9 +334,10 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 		}
 		// expiration
 		log.Printf("[DEBUG] Ks3 bucket:  %s, start: %#v", d.Id(), raw)
+		e := make(map[string]interface{})
 		if lifecycleRule.Expiration != nil {
 			log.Printf("[DEBUG] Ks3 bucket:  %s, lifecycleRule.Expiration: %#v", d.Id(), lifecycleRule.Expiration)
-			e := make(map[string]interface{})
+
 			if &lifecycleRule.Expiration.Date != nil && lifecycleRule.Expiration.Date != "" {
 				lifecycleRule.Expiration.Date = strings.ReplaceAll(lifecycleRule.Expiration.Date, ".000", "")
 				t, err := time.Parse(Iso8601DateFormat, lifecycleRule.Expiration.Date)
@@ -346,9 +347,9 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 				e["date"] = t.Format("2006-01-02")
 			}
 			e["days"] = fmt.Sprintf("%d", lifecycleRule.Expiration.Days)
-			rule["expiration"] = e
 			log.Printf("[DEBUG] Ks3 bucket:  %s, lifecycleRule.Expiration  end: %#v", d.Id(), lifecycleRule.Expiration)
 		}
+		rule["expiration"] = e
 		// transitions
 		if len(lifecycleRule.Transitions) != 0 {
 			var eSli []interface{}
