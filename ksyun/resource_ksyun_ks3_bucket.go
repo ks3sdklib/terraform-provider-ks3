@@ -605,9 +605,8 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			}
 			if cnt > 1 {
 				return WrapError(Error("One and only one of 'date', 'date' and 'days' can be specified in one expiration configuration."))
-			} else if cnt == 1 {
-				rule.Expiration = &expirationTmp
 			}
+			rule.Expiration = &expirationTmp
 			log.Printf("[DEBUG] Ks3 bucket:  %s, r[\"end\"]: %#v", d.Id(), r["expiration"])
 		}
 		// Transitions
