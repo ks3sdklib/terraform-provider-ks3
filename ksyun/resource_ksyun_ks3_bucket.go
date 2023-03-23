@@ -2,7 +2,6 @@ package ksyun
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/hashcode"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -39,6 +38,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 				Type:         schema.TypeString,
 				Default:      ks3.ACLPrivate,
 				Optional:     true,
+				Computed:     true,
 				ValidateFunc: validation.StringInSlice([]string{"private", "public-read", "public-read-write"}, false),
 			},
 			"cors_rule": {
@@ -101,6 +101,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 
 			"lifecycle_rule": {
 				Type:     schema.TypeList,
+				Computed: true,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -161,10 +162,6 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 										Type:     schema.TypeString,
 										Optional: true,
 									},
-									"tests": {
-										Type:     schema.TypeString,
-										Optional: true,
-									},
 								},
 							},
 						},
@@ -183,12 +180,11 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 									},
 									"storage_class": {
 										Type:     schema.TypeString,
-										Default:  ks3.StorageStandard,
 										Optional: true,
 										ValidateFunc: validation.StringInSlice([]string{
-											string(ks3.StorageStandard),
 											string(ks3.StorageIA),
 											string(ks3.StorageArchive),
+											string(ks3.StorageDeepIA),
 										}, false),
 									},
 								},
@@ -551,9 +547,6 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		if val, ok := r["id"].(string); ok && val != "" {
 			rule.ID = val
 		}
-		if val, ok := r["prefix"].(string); ok && val != "" {
-			rule.Prefix = val
-		}
 		// Enabled
 		if val, ok := r["enabled"].(bool); ok && val {
 			rule.Status = string(ExpirationStatusEnabled)
@@ -580,15 +573,15 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 					rule.Filter = filterModel
 				}
 			}
+		} else {
+			if val, ok := r["prefix"].(string); ok && val != "" {
+				rule.Prefix = val
+			}
 		}
-		json_p, _ := json.Marshal(rule.Filter)
-		fmt.Printf("rule.filter=%s\n", json_p)
-
 		// Expiration
 		expirationMap, ok := r["expiration"].(map[string]interface{})
-		if ok {
+		if ok && expirationMap == nil {
 			expirationTmp := ks3.LifecycleExpiration{}
-			fmt.Printf("---expirationMap:%s", expirationMap)
 			daysInterface, ok := expirationMap["days"].(string)
 			cnt := 0
 			if ok && daysInterface != "" {
@@ -598,7 +591,6 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 					cnt++
 				}
 			}
-			fmt.Printf("---expirationTmp.Days:%d", expirationTmp.Days)
 			valDate, ok := expirationMap["date"].(string)
 			if ok && valDate != "" {
 				expirationTmp.Date = fmt.Sprintf("%sT00:00:00+08:00", valDate)
@@ -610,9 +602,6 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			}
 			rule.Expiration = &expirationTmp
 		}
-		json_p, _ = json.Marshal(rule.Expiration)
-		fmt.Printf("rule.Expiration=%s\n", json_p)
-
 		// Transitions
 		transitionsRaw := r["transitions"]
 		if transitionsRaw != nil {
@@ -641,12 +630,9 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 				}
 			}
 		}
-		json_p, _ = json.Marshal(rule.Transitions)
-		fmt.Printf("rule.Transitions=%s\n", json_p)
-		fmt.Println("---------------------------------")
 		rules = append(rules, rule)
 	}
-
+	log.Printf("[DEBUG] Ks3 bucket: %s, put Lifecycle: %#v", d.Id(), rules)
 	raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
 		requestInfo = ks3Client
 		return nil, ks3Client.SetBucketLifecycle(bucket, rules)
@@ -725,18 +711,6 @@ func transitionsHash(v interface{}) int {
 		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
 	}
 	if v, ok := m["storage_class"]; ok {
-		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
-	}
-	if v, ok := m["days"]; ok {
-		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
-	}
-	return hashcode.String(buf.String())
-}
-
-func expirationHash(v interface{}) int {
-	var buf bytes.Buffer
-	m := v.(map[string]interface{})
-	if v, ok := m["date"]; ok {
 		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
 	}
 	if v, ok := m["days"]; ok {

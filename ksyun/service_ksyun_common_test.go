@@ -11,7 +11,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"testing"
 	"time"
 )
 
@@ -91,21 +90,6 @@ type resourceAttrCheck struct {
 var testAccProviders map[string]terraform.ResourceProvider
 
 type resourceAttrMapUpdate func(map[string]string) resource.TestCheckFunc
-
-func testAccPreCheck(t *testing.T) {
-	if v := os.Getenv("KS3_ACCESS_KEY_ID"); v == "" {
-		t.Fatal("KS3_ACCESS_KEY_ID must be set for acceptance tests")
-	}
-	if v := os.Getenv("KS3_ACCESS_KEY_SECRET"); v == "" {
-		t.Fatal("KS3_ACCESS_KEY_SECRET must be set for acceptance tests")
-	}
-	if v := os.Getenv("KS3_REGION"); v == "" {
-		log.Println("[INFO] Test: Using BEIJING as test region")
-		os.Setenv("KS3_REGION", "BEIJING")
-	} else {
-		defaultRegionToTest = "BEIJING"
-	}
-}
 
 // get resourceAttrMapUpdate for a series test step and check resource exist
 func (rac *resourceAttrCheck) resourceAttrMapUpdateSet() resourceAttrMapUpdate {

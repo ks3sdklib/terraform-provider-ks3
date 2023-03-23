@@ -41,8 +41,7 @@ var ValidProtocols = []Protocol{Http, Https, Tcp, Udp}
 
 // default region for all resource
 const DEFAULT_REGION = "BEIJING"
-
-const COLON_SEPARATED = ":"
+const DEFAULT_ENDPOINT = "ks3-cn-beijing.ksyuncs.com"
 
 const ServerSideEncryptionAes256 = "AES256"
 const ServerSideEncryptionKMS = "KMS"

@@ -79,11 +79,11 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 	accessKey, ok := d.Get("access_key").(string)
 	if !ok {
-		accessKey = os.Getenv("KS3_ACCESS_KEY_ID")
+		accessKey = os.Getenv("KS3_ACCESS_KEY")
 	}
 	secretKey, ok := d.Get("secret_key").(string)
 	if !ok {
-		secretKey = os.Getenv("KS3_ACCESS_KEY_SECRET")
+		secretKey = os.Getenv("KS3_SECRET_KEY")
 	}
 	region, ok := d.Get("region").(string)
 	if !ok {
@@ -92,10 +92,18 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	if region == "" {
 		region = DEFAULT_REGION
 	}
+	endpoint, ok := d.Get("endpoint").(string)
+	if !ok {
+		endpoint = os.Getenv("KS3_ENDPOINT")
+	}
+	if endpoint == "" {
+		endpoint = DEFAULT_ENDPOINT
+	}
 	config := &connectivity.Config{
-		AccessKey: strings.TrimSpace(accessKey),
-		SecretKey: strings.TrimSpace(secretKey),
-		Region:    connectivity.Region(strings.TrimSpace(region)),
+		AccessKey:   strings.TrimSpace(accessKey),
+		SecretKey:   strings.TrimSpace(secretKey),
+		Region:      connectivity.Region(strings.TrimSpace(region)),
+		Ks3Endpoint: strings.TrimSpace(endpoint),
 	}
 
 	client, err := config.Client()

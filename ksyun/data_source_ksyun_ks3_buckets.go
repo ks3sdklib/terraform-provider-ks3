@@ -110,6 +110,7 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 						"lifecycle_rule": {
 							Type:     schema.TypeList,
 							Computed: true,
+							Optional: true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"id": {

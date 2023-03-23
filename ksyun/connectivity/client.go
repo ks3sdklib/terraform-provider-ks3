@@ -41,17 +41,13 @@ var terraformVersion = strings.TrimSuffix(schema.Provider{}.TerraformVersion, "-
 
 // Client for KsyunClient
 func (c *Config) Client() (*KsyunClient, error) {
-	accessKey := os.Getenv("KS3_ACCESS_KEY_ID")
-	secretKey := os.Getenv("KS3_ACCESS_KEY_SECRET")
-	region := os.Getenv("KS3_REGION")
-	endpoint := os.Getenv("KS3_ENDPOINT")
 
 	return &KsyunClient{
 		config:    c,
-		Region:    Region(region),
-		AccessKey: accessKey,
-		SecretKey: secretKey,
-		Endpoint:  endpoint,
+		Region:    c.Region,
+		AccessKey: c.AccessKey,
+		SecretKey: c.SecretKey,
+		Endpoint:  c.Ks3Endpoint,
 	}, nil
 }
 
