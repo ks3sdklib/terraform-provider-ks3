@@ -29,9 +29,15 @@ func Provider() terraform.ResourceProvider {
 			},
 			"region": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("KS3_REGION", os.Getenv("KS3_REGION")),
 				Description: descriptions["region"],
+			},
+			"endpoint": {
+				Type:        schema.TypeString,
+				Required:    true,
+				DefaultFunc: schema.EnvDefaultFunc("KS3_ENDPOINT", os.Getenv("KS3_ENDPOINT")),
+				Description: descriptions["endpoint"],
 			},
 			"protocol": {
 				Type:         schema.TypeString,
