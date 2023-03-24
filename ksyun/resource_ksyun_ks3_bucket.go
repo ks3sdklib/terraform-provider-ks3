@@ -150,7 +150,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 							Required: true,
 						},
 						"expiration": {
-							Type:     schema.TypeList,
+							Type:     schema.TypeSet,
 							Optional: true,
 							MaxItems: 1,
 							Elem: &schema.Resource{
@@ -337,7 +337,19 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 		}
 		// Expiration
 		if lifecycleRule.Expiration != nil {
-			rule["expiration"] = flattenBucketLifecycleRuleExpiration(lifecycleRule.Expiration)
+			log.Printf("[DEBUG] lifecycleRule.Expiration start: %#v", lifecycleRule.Expiration)
+			m := make(map[string]interface{})
+			if &lifecycleRule.Expiration.Date != nil {
+				lifecycleRule.Expiration.Date = strings.ReplaceAll(lifecycleRule.Expiration.Date, ".000", "")
+				t, err := time.Parse(Iso8601DateFormat, lifecycleRule.Expiration.Date)
+				if err == nil {
+					m["date"] = t.Format("2006-01-02")
+				}
+			}
+			if &lifecycleRule.Expiration.Days != nil {
+				m["days"] = aws.Int(lifecycleRule.Expiration.Days)
+			}
+			rule["expiration"] = schema.NewSet(expirationHash, []interface{}{m})
 		}
 		// transitions
 		if len(lifecycleRule.Transitions) != 0 {
@@ -574,16 +586,26 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		}
 		// Expiration
 		// Expiration
-		expiration := d.Get(fmt.Sprintf("lifecycle_rule.%d.expiration", i)).([]interface{})
-		if len(expiration) > 0 && expiration[0] != nil {
+		expiration := d.Get(fmt.Sprintf("lifecycle_rule.%d.expiration", i)).(*schema.Set).List()
+		if len(expiration) > 0 {
 			e := expiration[0].(map[string]interface{})
-			i := &ks3.LifecycleExpiration{}
-			if val, ok := e["date"].(string); ok && val != "" {
-				i.Date = fmt.Sprintf("%sT00:00:00+08:00", val)
-			} else if val, ok := e["days"].(int); ok && val > 0 {
-				i.Days = val
+			i := ks3.LifecycleExpiration{}
+			valDate, _ := e["date"].(string)
+			valDays, _ := e["days"].(int)
+			cnt := 0
+			if valDate != "" {
+				i.Date = fmt.Sprintf("%sT00:00:00+08:00", valDate)
+				cnt++
 			}
-			rule.Expiration = i
+			if valDays > 0 {
+				i.Days = valDays
+				cnt++
+			}
+			if cnt != 1 {
+				return WrapError(Error("One and only one of 'date', 'date' and 'days' can be specified in one expiration configuration."))
+			}
+
+			rule.Expiration = &i
 		}
 		log.Printf("[DEBUG] Ks3 bucket:  %s,rule.Expiration: %#v", d.Id(), rule.Expiration)
 		// Transitions
@@ -703,24 +725,14 @@ func transitionsHash(v interface{}) int {
 	return hashcode.String(buf.String())
 }
 
-// Lifecycle Rule functions
-
-func flattenBucketLifecycleRuleExpiration(expiration *ks3.LifecycleExpiration) []interface{} {
-	if expiration == nil {
-		return []interface{}{}
+func expirationHash(v interface{}) int {
+	var buf bytes.Buffer
+	m := v.(map[string]interface{})
+	if v, ok := m["date"]; ok {
+		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
 	}
-	log.Printf("[DEBUG] lifecycleRule.Expiration start: %#v", expiration)
-	m := make(map[string]interface{})
-	if &expiration.Date != nil {
-		expiration.Date = strings.ReplaceAll(expiration.Date, ".000", "")
-		t, err := time.Parse(Iso8601DateFormat, expiration.Date)
-		if err == nil {
-			m["date"] = t.Format("2006-01-02")
-		}
+	if v, ok := m["days"]; ok {
+		buf.WriteString(fmt.Sprintf("%d-", v.(int)))
 	}
-	if &expiration.Days != nil {
-		m["days"] = aws.Int(expiration.Days)
-	}
-
-	return []interface{}{m}
+	return hashcode.String(buf.String())
 }
