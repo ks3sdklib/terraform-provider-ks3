@@ -3,6 +3,7 @@ package ksyun
 import (
 	"bytes"
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/hashcode"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -334,10 +335,10 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 		}
 		// expiration
 		log.Printf("[DEBUG] Ks3 bucket:  %s, start: %#v", d.Id(), raw)
-		e := make(map[string]interface{})
-		if lifecycleRule.Expiration != nil {
-			log.Printf("[DEBUG] Ks3 bucket:  %s, lifecycleRule.Expiration: %#v", d.Id(), lifecycleRule.Expiration)
 
+		if lifecycleRule.Expiration != nil {
+			log.Printf("[DEBUG] Ks3 bucket:  %s, lifecycleRule.Expiration start: %#v", d.Id(), lifecycleRule.Expiration)
+			e := make(map[string]interface{})
 			if &lifecycleRule.Expiration.Date != nil && lifecycleRule.Expiration.Date != "" {
 				lifecycleRule.Expiration.Date = strings.ReplaceAll(lifecycleRule.Expiration.Date, ".000", "")
 				t, err := time.Parse(Iso8601DateFormat, lifecycleRule.Expiration.Date)
@@ -346,10 +347,13 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 				}
 				e["date"] = t.Format("2006-01-02")
 			}
-			e["days"] = fmt.Sprintf("%d", lifecycleRule.Expiration.Days)
-			log.Printf("[DEBUG] Ks3 bucket:  %s, lifecycleRule.Expiration  end: %#v", d.Id(), lifecycleRule.Expiration)
+			e["days"] = aws.Int(lifecycleRule.Expiration.Days)
+			rule["expiration"] = e
+		} else {
+			rule["expiration"] = nil
 		}
-		rule["expiration"] = e
+		log.Printf("[DEBUG] Ks3 bucket:  %s, lifecycleRule.Expiration  end: %#v", d.Id(), lifecycleRule.Expiration)
+
 		// transitions
 		if len(lifecycleRule.Transitions) != 0 {
 			var eSli []interface{}
@@ -584,31 +588,34 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 			}
 		}
 		// Expiration
-		expirationMap, ok := r["expiration"].(map[string]interface{})
-		log.Printf("[DEBUG] Ks3 bucket: %s, put Lifecycle: %#v", d.Id(), expirationMap)
-		log.Printf("[DEBUG] Ks3 bucket: %s, r[\"expiration\"]: %#v", d.Id(), r["expiration"])
-		if ok && expirationMap != nil {
-			expirationTmp := ks3.LifecycleExpiration{}
-			daysInterface, ok := expirationMap["days"].(string)
-			cnt := 0
-			if ok && daysInterface != "" {
-				valDays, err := strconv.Atoi(daysInterface)
-				if err == nil && valDays > 0 {
-					expirationTmp.Days = valDays
+		expiration := r["expiration"]
+		if expiration != nil {
+			expirationMap, ok := expiration.(map[string]interface{})
+			if expirationMap != nil && ok {
+				expirationTmp := ks3.LifecycleExpiration{}
+				daysInterface, ok := expirationMap["days"].(string)
+				cnt := 0
+				if ok && daysInterface != "" {
+					valDays, err := strconv.Atoi(daysInterface)
+					if err == nil && valDays > 0 {
+						expirationTmp.Days = valDays
+						cnt++
+					}
+				}
+				valDate, ok := expirationMap["date"].(string)
+				if ok && valDate != "" {
+					expirationTmp.Date = fmt.Sprintf("%sT00:00:00+08:00", valDate)
 					cnt++
 				}
+				if cnt != 1 {
+					return WrapError(Error("One and only one of 'date', 'date' and 'days' can be specified in one expiration configuration."))
+				}
+				rule.Expiration = &expirationTmp
 			}
-			valDate, ok := expirationMap["date"].(string)
-			if ok && valDate != "" {
-				expirationTmp.Date = fmt.Sprintf("%sT00:00:00+08:00", valDate)
-				cnt++
-			}
-			if cnt > 1 {
-				return WrapError(Error("One and only one of 'date', 'date' and 'days' can be specified in one expiration configuration."))
-			}
-			rule.Expiration = &expirationTmp
-			log.Printf("[DEBUG] Ks3 bucket:  %s, r[\"end\"]: %#v", d.Id(), r["expiration"])
+		} else {
+			rule.Expiration = nil
 		}
+		log.Printf("[DEBUG] Ks3 bucket:  %s,rule.Expiration: %#v", d.Id(), rule.Expiration)
 		// Transitions
 		transitionsRaw := r["transitions"]
 		if transitionsRaw != nil {
