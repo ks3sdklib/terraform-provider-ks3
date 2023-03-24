@@ -3,7 +3,6 @@ package ksyun
 import (
 	"bytes"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/hashcode"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -347,7 +346,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 				}
 			}
 			if &lifecycleRule.Expiration.Days != nil {
-				m["days"] = aws.Int(lifecycleRule.Expiration.Days)
+				m["days"] = lifecycleRule.Expiration.Days
 			}
 			rule["expiration"] = schema.NewSet(expirationHash, []interface{}{m})
 		}
