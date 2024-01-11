@@ -9,7 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/wilac-pv/ksyun-ks3-go-sdk/ks3"
 	"github.com/wilac-pv/terraform-provider-ks3/ksyun/connectivity"
-	"io"
 	"log"
 	"strings"
 	"time"
@@ -427,22 +426,16 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 	raw, err = client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
 		params := map[string]interface{}{}
 		params["policy"] = nil
-		return ks3Client.Conn.Do("GET", d.Id(), "", params, nil, nil, 0, nil)
+		return ks3Client.GetBucketPolicy(d.Id())
 	})
 
 	if err != nil && !ks3NotFoundError(err) {
-		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "GetPolicyByConn", KsyunKs3GoSdk)
+		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "GetBucketPolicy", KsyunKs3GoSdk)
 	}
-	addDebug("GetPolicyByConn", raw, requestInfo, request)
+	addDebug("GetBucketPolicy", raw, requestInfo, request)
 	policy := ""
 	if err == nil {
-		rawResp := raw.(*ks3.Response)
-		defer rawResp.Body.Close()
-		rawData, err := io.ReadAll(rawResp.Body)
-		if err != nil {
-			return WrapError(err)
-		}
-		policy = string(rawData)
+		policy = raw.(string)
 	}
 
 	if err := d.Set("policy", policy); err != nil {
@@ -733,9 +726,9 @@ func resourceKsyunKs3BucketPolicyUpdate(client *connectivity.KsyunClient, d *sch
 			return nil, ks3Client.DeleteBucketPolicy(bucket)
 		})
 		if err != nil {
-			return WrapErrorf(err, DefaultErrorMsg, d.Id(), "DeletePolicyByConn", KsyunKs3GoSdk)
+			return WrapErrorf(err, DefaultErrorMsg, d.Id(), "DeleteBucketPolicy", KsyunKs3GoSdk)
 		}
-		addDebug("DeletePolicyByConn", raw, requestInfo, params)
+		addDebug("DeleteBucketPolicy", raw, requestInfo, params)
 		return nil
 	}
 	params := map[string]interface{}{}
@@ -747,9 +740,9 @@ func resourceKsyunKs3BucketPolicyUpdate(client *connectivity.KsyunClient, d *sch
 		return nil, ks3Client.SetBucketPolicy(bucket, policy)
 	})
 	if err != nil {
-		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "PutPolicyByConn", KsyunKs3GoSdk)
+		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "SetBucketPolicy", KsyunKs3GoSdk)
 	}
-	addDebug("PutPolicyByConn", raw, requestInfo, params)
+	addDebug("SetBucketPolicy", raw, requestInfo, params)
 	return nil
 }
 

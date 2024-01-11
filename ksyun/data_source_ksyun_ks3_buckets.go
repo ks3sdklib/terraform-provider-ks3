@@ -458,7 +458,7 @@ func bucketsDescriptionAttributes(d *schema.ResourceData, buckets []ks3.BucketPr
 
 		if err == nil {
 			if debugOn() {
-				addDebug("GetPolicyByConn", raw, requestInfo, map[string]string{"bucketName": bucket.Name})
+				addDebug("GetBucketPolicy", raw, requestInfo, map[string]string{"bucketName": bucket.Name})
 			}
 			policy = raw.(string)
 		} else {
@@ -486,11 +486,11 @@ func bucketsDescriptionAttributes(d *schema.ResourceData, buckets []ks3.BucketPr
 }
 
 func GetBucketInfo(client *ks3.Client, bucket string) (ks3.GetBucketInfoResult, error) {
-	resp, err := client.ListBuckets()
+	acl, err := client.GetBucketACL(bucket)
 	if err != nil {
 		return ks3.GetBucketInfoResult{}, err
 	}
-	acl, err := client.GetBucketACL(bucket)
+	resp, err := client.ListBuckets()
 	if err != nil {
 		return ks3.GetBucketInfoResult{}, err
 	}
