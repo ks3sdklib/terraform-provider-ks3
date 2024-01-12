@@ -407,22 +407,24 @@ func bucketsDescriptionAttributes(d *schema.ResourceData, buckets []ks3.BucketPr
 						ruleMapping["enabled"] = false
 					}
 					// Expiration
-					expirationMapping := make(map[string]interface{})
-					if lifecycleRule.Expiration.Date != "" {
-						t, err := time.Parse(Iso8601DateFormat, lifecycleRule.Expiration.Date)
-						if err != nil {
-							return WrapError(err)
+					if lifecycleRule.Expiration != nil {
+						expirationMapping := make(map[string]interface{})
+						if lifecycleRule.Expiration.Date != "" {
+							t, err := time.Parse(Iso8601DateFormat, lifecycleRule.Expiration.Date)
+							if err != nil {
+								return WrapError(err)
+							}
+							expirationMapping["date"] = t.Format("2006-01-02")
 						}
-						expirationMapping["date"] = t.Format("2006-01-02")
+						if lifecycleRule.Expiration.Days != 0 {
+							expirationMapping["days"] = lifecycleRule.Expiration.Days
+						}
+						ruleMapping["expiration"] = []interface{}{expirationMapping}
+						lifecycleRuleMappings = append(lifecycleRuleMappings, ruleMapping)
 					}
-					if lifecycleRule.Expiration.Days != 0 {
-						expirationMapping["days"] = lifecycleRule.Expiration.Days
-					}
-					ruleMapping["expiration"] = []interface{}{expirationMapping}
-					lifecycleRuleMappings = append(lifecycleRuleMappings, ruleMapping)
 					// Transition
-					var transitionList []interface{}
 					if len(lifecycleRule.Transitions) > 0 {
+						var transitionList []interface{}
 						for _, transition := range lifecycleRule.Transitions {
 							transitionMapping := make(map[string]interface{})
 							if transition.Date != "" {
@@ -440,8 +442,8 @@ func bucketsDescriptionAttributes(d *schema.ResourceData, buckets []ks3.BucketPr
 							}
 							transitionList = append(transitionList, transitionMapping)
 						}
+						ruleMapping["transition"] = transitionList
 					}
-					ruleMapping["transition"] = transitionList
 				}
 			}
 		} else {

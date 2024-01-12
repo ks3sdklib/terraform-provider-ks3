@@ -269,7 +269,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("bucket", d.Id())
 	d.Set("acl", object.BucketInfo.ACL)
 	d.Set("creation_date", object.BucketInfo.CreationDate.Format("2006-01-02"))
-	d.Set("location", object.BucketInfo.Location)
+	d.Set("location", object.BucketInfo.Region)
 	d.Set("owner", object.BucketInfo.Owner.ID)
 	d.Set("storage_class", object.BucketInfo.StorageClass)
 
