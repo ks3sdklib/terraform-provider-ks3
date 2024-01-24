@@ -4,7 +4,7 @@ require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1538
 	github.com/hashicorp/terraform-plugin-sdk v1.17.2
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/wilac-pv/ksyun-ks3-go-sdk v1.0.10-0.20230324081615-1ff86b7ab10e
+	github.com/wilac-pv/ksyun-ks3-go-sdk v1.0.16
 )
 
 require (
@@ -14,7 +14,7 @@ require (
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/agext/levenshtein v1.2.2 // indirect
-	github.com/apparentlymart/go-cidr v1.1.0 // indirectgogo
+	github.com/apparentlymart/go-cidr v1.1.0 // indirect; indirectgogo
 	github.com/apparentlymart/go-textseg/v12 v12.0.0 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect

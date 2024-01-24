@@ -90,9 +90,11 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 								},
 							},
 						},
+
 						"logging": {
 							Type:     schema.TypeList,
 							Computed: true,
+							MaxItems: 1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"target_bucket": {
@@ -105,8 +107,8 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 									},
 								},
 							},
-							MaxItems: 1,
 						},
+
 						"lifecycle_rule": {
 							Type:     schema.TypeList,
 							Computed: true,
@@ -117,14 +119,22 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 										Type:     schema.TypeString,
 										Computed: true,
 									},
+									"enabled": {
+										Type:     schema.TypeBool,
+										Computed: true,
+									},
 									"filter": {
-										Type:     schema.TypeSet,
+										Type:     schema.TypeList,
 										Optional: true,
 										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
+												"prefix": {
+													Type:     schema.TypeString,
+													Optional: true,
+												},
 												"and": {
-													Type:     schema.TypeSet,
+													Type:     schema.TypeList,
 													Optional: true,
 													Elem: &schema.Resource{
 														Schema: map[string]*schema.Schema{
@@ -151,16 +161,8 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 														},
 													},
 												},
-												"prefix": {
-													Type:     schema.TypeString,
-													Optional: true,
-												},
 											},
 										},
-									},
-									"enabled": {
-										Type:     schema.TypeBool,
-										Computed: true,
 									},
 									"expiration": {
 										Type:     schema.TypeList,
@@ -180,8 +182,8 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 											},
 										},
 									},
-									"transitions": {
-										Type:     schema.TypeSet,
+									"transition": {
+										Type:     schema.TypeList,
 										Optional: true,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
@@ -190,7 +192,7 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 													Optional: true,
 												},
 												"days": {
-													Type:     schema.TypeString,
+													Type:     schema.TypeInt,
 													Optional: true,
 												},
 												"storage_class": {
@@ -208,6 +210,11 @@ func dataSourceKsyunKs3Buckets() *schema.Resource {
 									},
 								},
 							},
+						},
+
+						"policy": {
+							Type:     schema.TypeString,
+							Optional: true,
 						},
 					},
 				},
@@ -298,26 +305,8 @@ func bucketsDescriptionAttributes(d *schema.ResourceData, buckets []ks3.BucketPr
 			}
 			response, _ := raw.(ks3.GetBucketInfoResult)
 			mapping["acl"] = response.BucketInfo.ACL
-			mapping["extranet_endpoint"] = response.BucketInfo.ExtranetEndpoint
-			mapping["intranet_endpoint"] = response.BucketInfo.IntranetEndpoint
-			mapping["owner"] = response.BucketInfo.Owner.ID
-
-			//Add ServerSideEncryption information
-			var sseconfig []map[string]interface{}
-			if &response.BucketInfo.SseRule != nil {
-				if len(response.BucketInfo.SseRule.SSEAlgorithm) > 0 && response.BucketInfo.SseRule.SSEAlgorithm != "None" {
-					data := map[string]interface{}{
-						"sse_algorithm": response.BucketInfo.SseRule.SSEAlgorithm,
-					}
-					if response.BucketInfo.SseRule.KMSMasterKeyID != "" {
-						data["kms_master_key_id"] = response.BucketInfo.SseRule.KMSMasterKeyID
-					}
-					sseconfig = make([]map[string]interface{}, 0)
-					sseconfig = append(sseconfig, data)
-				}
-			}
-			mapping["server_side_encryption_rule"] = sseconfig
-
+			mapping["location"] = response.BucketInfo.Region
+			mapping["storage_class"] = response.BucketInfo.StorageClass
 		} else {
 			log.Printf("[WARN] Unable to get additional information for the bucket %s: %v", bucket.Name, err)
 		}
@@ -384,52 +373,101 @@ func bucketsDescriptionAttributes(d *schema.ResourceData, buckets []ks3.BucketPr
 				for _, lifecycleRule := range lifecycle.Rules {
 					ruleMapping := make(map[string]interface{})
 					ruleMapping["id"] = lifecycleRule.ID
+					if lifecycleRule.Prefix != "" {
+						ruleMapping["prefix"] = lifecycleRule.Prefix
+					}
 					if lifecycleRule.Filter != nil {
-						l := make(map[string]interface{})
-						if lifecycleRule.Prefix != "" {
-							l["prefix"] = lifecycleRule.Prefix
+						filter := make(map[string]interface{})
+						if lifecycleRule.Filter.Prefix != "" {
+							filter["prefix"] = lifecycleRule.Filter.Prefix
 						}
 						// and
-						if &lifecycleRule.Filter.And != nil {
+						if lifecycleRule.Filter.And != nil {
+							and := make(map[string]interface{})
+							if lifecycleRule.Filter.And.Prefix != "" {
+								and["prefix"] = lifecycleRule.Filter.And.Prefix
+							}
 							if len(lifecycleRule.Filter.And.Tag) != 0 {
-								var eSli []interface{}
+								var tags []interface{}
 								for _, tag := range lifecycleRule.Filter.And.Tag {
 									e := make(map[string]interface{})
 									e["key"] = tag.Key
 									e["value"] = tag.Value
-									eSli = append(eSli, e)
+									tags = append(tags, e)
 								}
-								l["and"] = eSli
+								and["tag"] = tags
 							}
+							filter["and"] = []interface{}{and}
 						}
-						ruleMapping["filter"] = l
+						ruleMapping["filter"] = []interface{}{filter}
 					}
 					if LifecycleRuleStatus(lifecycleRule.Status) == ExpirationStatusEnabled {
 						ruleMapping["enabled"] = true
 					} else {
 						ruleMapping["enabled"] = false
 					}
-					//Expiration
-					expirationMapping := make(map[string]interface{})
-					if lifecycleRule.Expiration.Date != "" {
-						t, err := time.Parse(Iso8601DateFormat, lifecycleRule.Expiration.Date)
-						if err != nil {
-							return WrapError(err)
+					// Expiration
+					if lifecycleRule.Expiration != nil {
+						expirationMapping := make(map[string]interface{})
+						if lifecycleRule.Expiration.Date != "" {
+							t, err := time.Parse(Iso8601DateFormat, lifecycleRule.Expiration.Date)
+							if err != nil {
+								return WrapError(err)
+							}
+							expirationMapping["date"] = t.Format("2006-01-02")
 						}
-						expirationMapping["date"] = t.Format("2006-01-02")
+						if lifecycleRule.Expiration.Days != 0 {
+							expirationMapping["days"] = lifecycleRule.Expiration.Days
+						}
+						ruleMapping["expiration"] = []interface{}{expirationMapping}
+						lifecycleRuleMappings = append(lifecycleRuleMappings, ruleMapping)
 					}
-					if &lifecycleRule.Expiration.Days != nil {
-						expirationMapping["days"] = lifecycleRule.Expiration.Days
+					// Transition
+					if len(lifecycleRule.Transitions) > 0 {
+						var transitionList []interface{}
+						for _, transition := range lifecycleRule.Transitions {
+							transitionMapping := make(map[string]interface{})
+							if transition.Date != "" {
+								t, err := time.Parse(Iso8601DateFormat, transition.Date)
+								if err != nil {
+									return WrapError(err)
+								}
+								transitionMapping["date"] = t.Format("2006-01-02")
+							}
+							if transition.Days != 0 {
+								transitionMapping["days"] = transition.Days
+							}
+							if transition.StorageClass != "" {
+								transitionMapping["storage_class"] = transition.StorageClass
+							}
+							transitionList = append(transitionList, transitionMapping)
+						}
+						ruleMapping["transition"] = transitionList
 					}
-					ruleMapping["expiration"] = expirationMapping
-					lifecycleRuleMappings = append(lifecycleRuleMappings, ruleMapping)
 				}
 			}
-
 		} else {
 			log.Printf("[WARN] Unable to get lifecycle information for the bucket %s: %v", bucket.Name, err)
 		}
 		mapping["lifecycle_rule"] = lifecycleRuleMappings
+
+		// Add policy information
+		var policy string
+		raw, err = client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
+			requestInfo = ks3Client
+			return ks3Client.GetBucketPolicy(bucket.Name)
+		})
+
+		if err == nil {
+			if debugOn() {
+				addDebug("GetBucketPolicy", raw, requestInfo, map[string]string{"bucketName": bucket.Name})
+			}
+			policy = raw.(string)
+		} else {
+			log.Printf("[WARN] Unable to get policy information for the bucket %s: %v", bucket.Name, err)
+		}
+		mapping["policy"] = policy
+
 		ids = append(ids, bucket.Name)
 		s = append(s, mapping)
 		names = append(names, bucket.Name)
@@ -450,22 +488,25 @@ func bucketsDescriptionAttributes(d *schema.ResourceData, buckets []ks3.BucketPr
 }
 
 func GetBucketInfo(client *ks3.Client, bucket string) (ks3.GetBucketInfoResult, error) {
-
+	acl, err := client.GetBucketACL(bucket)
+	if err != nil {
+		return ks3.GetBucketInfoResult{}, err
+	}
 	resp, err := client.ListBuckets()
-	if err == nil {
-		for _, bucketInfo := range resp.Buckets {
-			if bucketInfo.Name == bucket {
-				return ks3.GetBucketInfoResult{
-					BucketInfo: ks3.BucketInfo{
-						XMLName: bucketInfo.XMLName,
-						Name:    bucket,
-						Region:  bucketInfo.Region,
-						//GET BUCKETACL
-						//ACL:          bucketInfo.Type,
-						StorageClass: bucketInfo.Type,
-					}}, nil
-			}
+	if err != nil {
+		return ks3.GetBucketInfoResult{}, err
+	}
+	for _, bucketInfo := range resp.Buckets {
+		if bucketInfo.Name == bucket {
+			return ks3.GetBucketInfoResult{
+				BucketInfo: ks3.BucketInfo{
+					XMLName:      bucketInfo.XMLName,
+					Name:         bucket,
+					Region:       bucketInfo.Region,
+					ACL:          string(acl.GetCannedACL()),
+					StorageClass: bucketInfo.Type,
+				}}, nil
 		}
 	}
-	return ks3.GetBucketInfoResult{}, err
+	return ks3.GetBucketInfoResult{}, nil
 }

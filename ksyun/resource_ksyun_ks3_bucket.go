@@ -10,7 +10,6 @@ import (
 	"github.com/wilac-pv/ksyun-ks3-go-sdk/ks3"
 	"github.com/wilac-pv/terraform-provider-ks3/ksyun/connectivity"
 	"log"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -40,6 +39,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"private", "public-read", "public-read-write"}, false),
 			},
+
 			"cors_rule": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -77,6 +77,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 			"logging": {
 				Type:     schema.TypeList,
 				Optional: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"target_bucket": {
@@ -89,13 +90,6 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 						},
 					},
 				},
-				MaxItems: 1,
-			},
-
-			"logging_isenable": {
-				Type:       schema.TypeBool,
-				Optional:   true,
-				Deprecated: "Deprecated from 1.37.0. When `logging` is set, the bucket logging will be able.",
 			},
 
 			"lifecycle_rule": {
@@ -110,12 +104,16 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 							Computed:     true,
 							ValidateFunc: validation.StringLenBetween(0, 255),
 						},
+						"enabled": {
+							Type:     schema.TypeBool,
+							Required: true,
+						},
 						"prefix": {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
 						"filter": {
-							Type:     schema.TypeSet,
+							Type:     schema.TypeList,
 							Optional: true,
 							MaxItems: 1,
 							Elem: &schema.Resource{
@@ -124,18 +122,31 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 										Type:     schema.TypeString,
 										Optional: true,
 									},
-									"tag": {
+									"and": {
 										Type:     schema.TypeList,
 										Optional: true,
+										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
-												"key": {
+												"prefix": {
 													Type:     schema.TypeString,
-													Required: true,
+													Optional: true,
 												},
-												"value": {
-													Type:     schema.TypeString,
-													Required: true,
+												"tag": {
+													Type:     schema.TypeList,
+													Optional: true,
+													Elem: &schema.Resource{
+														Schema: map[string]*schema.Schema{
+															"key": {
+																Type:     schema.TypeString,
+																Optional: true,
+															},
+															"value": {
+																Type:     schema.TypeString,
+																Optional: true,
+															},
+														},
+													},
 												},
 											},
 										},
@@ -143,13 +154,8 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 								},
 							},
 						},
-
-						"enabled": {
-							Type:     schema.TypeBool,
-							Required: true,
-						},
 						"expiration": {
-							Type:     schema.TypeSet,
+							Type:     schema.TypeList,
 							Optional: true,
 							MaxItems: 1,
 							Elem: &schema.Resource{
@@ -166,8 +172,8 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 								},
 							},
 						},
-						"transitions": {
-							Type:     schema.TypeSet,
+						"transition": {
+							Type:     schema.TypeList,
 							Optional: true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
@@ -176,7 +182,7 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 										Optional: true,
 									},
 									"days": {
-										Type:     schema.TypeString,
+										Type:     schema.TypeInt,
 										Optional: true,
 									},
 									"storage_class": {
@@ -193,7 +199,6 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 						},
 					},
 				},
-				MaxItems: 10,
 			},
 
 			"storage_class": {
@@ -207,6 +212,16 @@ func resourceKsyunKs3Bucket() *schema.Resource {
 					string(ks3.TypeArchive),
 					string(ks3.StorageDeepIA),
 				}, false),
+			},
+
+			"policy": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+
+			"creation_date": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 		},
 	}
@@ -254,7 +269,7 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("bucket", d.Id())
 	d.Set("acl", object.BucketInfo.ACL)
 	d.Set("creation_date", object.BucketInfo.CreationDate.Format("2006-01-02"))
-	d.Set("location", object.BucketInfo.Location)
+	d.Set("location", object.BucketInfo.Region)
 	d.Set("owner", object.BucketInfo.Owner.ID)
 	d.Set("storage_class", object.BucketInfo.StorageClass)
 
@@ -345,12 +360,12 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 					m["date"] = t.Format("2006-01-02")
 				}
 			}
-			if &lifecycleRule.Expiration.Days != nil {
+			if lifecycleRule.Expiration.Days != 0 {
 				m["days"] = lifecycleRule.Expiration.Days
 			}
-			rule["expiration"] = schema.NewSet(expirationHash, []interface{}{m})
+			rule["expiration"] = []interface{}{m}
 		}
-		// transitions
+		// Transition
 		if len(lifecycleRule.Transitions) != 0 {
 			var eSli []interface{}
 			for _, transition := range lifecycleRule.Transitions {
@@ -363,16 +378,67 @@ func resourceKsyunKs3BucketRead(d *schema.ResourceData, meta interface{}) error 
 					}
 					e["date"] = t.Format("2006-01-02")
 				}
-				e["days"] = fmt.Sprintf("%d", transition.Days)
-				e["storage_class"] = string(transition.StorageClass)
+				if transition.Days != 0 {
+					e["days"] = transition.Days
+				}
+				if transition.StorageClass != "" {
+					e["storage_class"] = transition.StorageClass
+				}
 				eSli = append(eSli, e)
 			}
-			rule["transitions"] = schema.NewSet(transitionsHash, eSli)
+			rule["transition"] = eSli
+		}
+
+		// Filter
+		if lifecycleRule.Filter != nil {
+			filter := make(map[string]interface{})
+			if lifecycleRule.Filter.Prefix != "" {
+				filter["prefix"] = lifecycleRule.Filter.Prefix
+			}
+			// and
+			if lifecycleRule.Filter.And != nil {
+				and := make(map[string]interface{})
+				if lifecycleRule.Filter.And.Prefix != "" {
+					and["prefix"] = lifecycleRule.Filter.And.Prefix
+				}
+				if len(lifecycleRule.Filter.And.Tag) != 0 {
+					var tags []interface{}
+					for _, tag := range lifecycleRule.Filter.And.Tag {
+						e := make(map[string]interface{})
+						e["key"] = tag.Key
+						e["value"] = tag.Value
+						tags = append(tags, e)
+					}
+					and["tag"] = tags
+				}
+				filter["and"] = []interface{}{and}
+			}
+			rule["filter"] = []interface{}{filter}
 		}
 		lrules = append(lrules, rule)
 	}
 
 	if err := d.Set("lifecycle_rule", lrules); err != nil {
+		return WrapError(err)
+	}
+
+	// Read Policy
+	raw, err = client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
+		params := map[string]interface{}{}
+		params["policy"] = nil
+		return ks3Client.GetBucketPolicy(d.Id())
+	})
+
+	if err != nil && !ks3NotFoundError(err) {
+		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "GetBucketPolicy", KsyunKs3GoSdk)
+	}
+	addDebug("GetBucketPolicy", raw, requestInfo, request)
+	policy := ""
+	if err == nil {
+		policy = raw.(string)
+	}
+
+	if err := d.Set("policy", policy); err != nil {
 		return WrapError(err)
 	}
 
@@ -416,6 +482,13 @@ func resourceKsyunKs3BucketUpdate(d *schema.ResourceData, meta interface{}) erro
 			return WrapError(err)
 		}
 		d.SetPartial("lifecycle_rule")
+	}
+
+	if d.HasChange("policy") {
+		if err := resourceKsyunKs3BucketPolicyUpdate(client, d); err != nil {
+			return WrapError(err)
+		}
+		d.SetPartial("policy")
 	}
 
 	d.Partial(false)
@@ -545,7 +618,7 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 
 	rules := make([]ks3.LifecycleRule, 0, len(lifecycleRules))
 
-	for i, lifecycleRule := range lifecycleRules {
+	for _, lifecycleRule := range lifecycleRules {
 		r := lifecycleRule.(map[string]interface{})
 		rule := ks3.LifecycleRule{}
 		// ID--有值
@@ -558,81 +631,70 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		} else {
 			rule.Status = string(ExpirationStatusDisabled)
 		}
-		if filterSet, ok := r["filter"].(*schema.Set); ok {
-			if filterSet.Len() > 0 {
-				if filter, ok := filterSet.List()[0].(map[string]interface{}); ok {
-					filterModel := &ks3.LifecycleFilter{
-						And: ks3.LifecycleAnd{},
-					}
-					filterModel.And.Prefix = filter["prefix"].(string)
-					tagList := filter["tag"].([]interface{})
-					for _, tag := range tagList {
-						tagMap := tag.(map[string]interface{})
-						key := tagMap["key"].(string)
-						value := tagMap["value"].(string)
-						filterModel.And.Tag = append(filterModel.And.Tag, ks3.Tag{
-							Key:   key,
-							Value: value,
-						})
-					}
-					rule.Filter = filterModel
+		// Prefix
+		if val, ok := r["prefix"].(string); ok && val != "" {
+			rule.Prefix = val
+		}
+		filterList := r["filter"].([]interface{})
+		if len(filterList) > 0 {
+			filter := filterList[0].(map[string]interface{})
+			filterModel := &ks3.LifecycleFilter{}
+			filterModel.Prefix = filter["prefix"].(string)
+			andList := filter["and"].([]interface{})
+			if len(andList) > 0 {
+				and := andList[0].(map[string]interface{})
+				filterModel.And = &ks3.LifecycleAnd{}
+				filterModel.And.Prefix = and["prefix"].(string)
+				tagList := and["tag"].([]interface{})
+				for _, tag := range tagList {
+					tagMap := tag.(map[string]interface{})
+					key := tagMap["key"].(string)
+					value := tagMap["value"].(string)
+					filterModel.And.Tag = append(filterModel.And.Tag, ks3.Tag{
+						Key:   key,
+						Value: value,
+					})
 				}
 			}
-		} else {
-			if val, ok := r["prefix"].(string); ok && val != "" {
-				rule.Prefix = val
-			}
+			rule.Filter = filterModel
 		}
 		// Expiration
-		// Expiration
-		expiration := d.Get(fmt.Sprintf("lifecycle_rule.%d.expiration", i)).(*schema.Set).List()
-		if len(expiration) > 0 {
-			e := expiration[0].(map[string]interface{})
+		expirationList := r["expiration"].([]interface{})
+		if len(expirationList) > 0 {
+			e := expirationList[0].(map[string]interface{})
 			i := ks3.LifecycleExpiration{}
 			valDate, _ := e["date"].(string)
 			valDays, _ := e["days"].(int)
-			cnt := 0
-			if valDate != "" {
-				i.Date = fmt.Sprintf("%sT00:00:00+08:00", valDate)
-				cnt++
-			}
-			if valDays > 0 {
-				i.Days = valDays
-				cnt++
-			}
-			if cnt != 1 {
+			if valDate != "" && valDays > 0 {
 				return WrapError(Error("One and only one of 'date', 'date' and 'days' can be specified in one expiration configuration."))
 			}
-
+			if valDate != "" {
+				i.Date = fmt.Sprintf("%sT00:00:00+08:00", valDate)
+			}
+			if valDays != 0 {
+				i.Days = valDays
+			}
 			rule.Expiration = &i
 		}
 		log.Printf("[DEBUG] Ks3 bucket:  %s,rule.Expiration: %#v", d.Id(), rule.Expiration)
-		// Transitions
-		transitionsRaw := r["transitions"]
-		if transitionsRaw != nil {
-			transitions := transitionsRaw.(*schema.Set).List()
-			if len(transitions) > 0 {
-				for _, transition := range transitions {
-					transitionTmp := ks3.LifecycleTransition{}
-					valStorageClass := transition.(map[string]interface{})["storage_class"].(string)
-					date, ok := transition.(map[string]interface{})["date"].(string)
-					if ok && date != "" {
-						transitionTmp.Date = fmt.Sprintf("%sT00:00:00+08:00", date)
-					}
-					cnt := 0
-					daysInterface, ok := transition.(map[string]interface{})["days"].(string)
-					if ok && daysInterface != "" {
-						valDays, err := strconv.Atoi(daysInterface)
-						if err == nil && valDays > 0 {
-							transitionTmp.Days = valDays
-							cnt++
-						}
-					}
-					if valStorageClass != "" {
-						transitionTmp.StorageClass = ks3.StorageClassType(valStorageClass)
-					}
-					rule.Transitions = append(rule.Transitions, transitionTmp)
+		// Transition
+		transitionList := r["transition"].([]interface{})
+		if len(transitionList) > 0 {
+			for _, transition := range transitionList {
+				transitionTmp := ks3.LifecycleTransition{}
+				storageClass := transition.(map[string]interface{})["storage_class"].(string)
+				date, ok := transition.(map[string]interface{})["date"].(string)
+				if ok && date != "" {
+					transitionTmp.Date = fmt.Sprintf("%sT00:00:00+08:00", date)
 				}
+				days, ok := transition.(map[string]interface{})["days"].(int)
+				if ok && days != 0 {
+					transitionTmp.Days = days
+				}
+				if storageClass != "" {
+					transitionTmp.StorageClass = ks3.StorageClassType(storageClass)
+				}
+				rule.Transitions = append(rule.Transitions, transitionTmp)
 			}
 		}
 		rules = append(rules, rule)
@@ -649,6 +711,38 @@ func resourceKsyunKs3BucketLifecycleRuleUpdate(client *connectivity.KsyunClient,
 		"bucketName": bucket,
 		"rules":      rules,
 	})
+	return nil
+}
+
+func resourceKsyunKs3BucketPolicyUpdate(client *connectivity.KsyunClient, d *schema.ResourceData) error {
+	bucket := d.Id()
+	policy := d.Get("policy").(string)
+	var requestInfo *ks3.Client
+	if len(policy) == 0 {
+		params := map[string]interface{}{}
+		params["policy"] = nil
+		raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
+			requestInfo = ks3Client
+			return nil, ks3Client.DeleteBucketPolicy(bucket)
+		})
+		if err != nil {
+			return WrapErrorf(err, DefaultErrorMsg, d.Id(), "DeleteBucketPolicy", KsyunKs3GoSdk)
+		}
+		addDebug("DeleteBucketPolicy", raw, requestInfo, params)
+		return nil
+	}
+	params := map[string]interface{}{}
+	params["policy"] = nil
+	raw, err := client.WithKs3Client(func(ks3Client *ks3.Client) (interface{}, error) {
+		requestInfo = ks3Client
+		buffer := new(bytes.Buffer)
+		buffer.Write([]byte(policy))
+		return nil, ks3Client.SetBucketPolicy(bucket, policy)
+	})
+	if err != nil {
+		return WrapErrorf(err, DefaultErrorMsg, d.Id(), "SetBucketPolicy", KsyunKs3GoSdk)
+	}
+	addDebug("SetBucketPolicy", raw, requestInfo, params)
 	return nil
 }
 

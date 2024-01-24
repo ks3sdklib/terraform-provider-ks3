@@ -84,11 +84,11 @@ var providerConfig map[string]interface{}
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 	accessKey, ok := d.Get("access_key").(string)
-	if !ok {
+	if !ok || accessKey == "" {
 		accessKey = os.Getenv("KS3_ACCESS_KEY")
 	}
 	secretKey, ok := d.Get("secret_key").(string)
-	if !ok {
+	if !ok || secretKey == "" {
 		secretKey = os.Getenv("KS3_SECRET_KEY")
 	}
 	region, ok := d.Get("region").(string)
